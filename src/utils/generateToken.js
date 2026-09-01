@@ -6,11 +6,11 @@ export const generateToken = (userId, res) => {
     expiresIn: process.env.JWT_EXPIRES_IN || "7d",
   });
 
-  res.cookie("ssjwt", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV == "production",
-    sameSite: "strict",
-    maxAge: 1000 * 60 * 60 * 24 * 7,
-  });
+ res.cookie("ssjwt", token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "none",
+  maxAge: 1000 * 60 * 60 * 24 * 7,
+});
   return token;
 };
