@@ -1,4 +1,4 @@
-import express, { urlencoded } from "express";
+  import express, { urlencoded } from "express";
 import { config } from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -27,12 +27,16 @@ app.use(cookieParser());
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || origin.startsWith("http://localhost:")) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+  if (
+    !origin ||
+    origin.startsWith("http://localhost:") ||
+    origin === "https://science-stories.onrender.com"
+  ) {
+    callback(null, true);
+  } else {
+    callback(new Error("Not allowed by CORS"));
+  }
+},
     credentials: true,
   }),
 );
