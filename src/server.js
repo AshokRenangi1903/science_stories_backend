@@ -16,11 +16,13 @@ import userRoutes from "./routes/userRoutes.js";
 import progressRoutes from "./routes/progressRoutes.js";
 import quizAttemptRoutes from "./routes/quizAttempt/quizAttemptRoutes.js";
 import questionAttemptRoutes from "./routes/quizAttempt/questionAttemptRoutes.js";
+import ttsRoutes from "./routes/ttsRoutes.js";
 
 config();
 const app = express();
 
 // Body parsing Middlewares
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -40,6 +42,7 @@ app.use(
     credentials: true,
   }),
 );
+app.use("/api/tts", ttsRoutes);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboardAnalytics", dashboardAnalyticsRoutes);
