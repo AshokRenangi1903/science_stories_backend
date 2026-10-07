@@ -1,7 +1,8 @@
 import textToSpeech from "@google-cloud/text-to-speech";
 
-const client = new textToSpeech.TextToSpeechClient();
-
+const client = new textToSpeech.TextToSpeechClient({
+  keyFilename: "/etc/secrets/google-tts-service-account.json",
+});
 const synthesizeSpeech = async (text) => {
   const [response] = await client.synthesizeSpeech({
     input: {
