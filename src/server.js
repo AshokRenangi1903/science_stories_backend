@@ -1,4 +1,4 @@
-  import express, { urlencoded } from "express";
+import express, { urlencoded } from "express";
 import { config } from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -29,16 +29,16 @@ app.use(cookieParser());
 app.use(
   cors({
     origin: (origin, callback) => {
-  if (
-    !origin ||
-    origin.startsWith("http://localhost:") ||
-    origin === "https://science-stories.onrender.com"
-  ) {
-    callback(null, true);
-  } else {
-    callback(new Error("Not allowed by CORS"));
-  }
-},
+      if (
+        !origin ||
+        origin.startsWith("http://localhost:") ||
+        origin === "https://science-stories.onrender.com"
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   }),
 );
@@ -57,6 +57,6 @@ app.use("/api/progress", progressRoutes);
 app.use("/api/quizAttempt", quizAttemptRoutes);
 app.use("/api/questionAttempt", questionAttemptRoutes);
 
-const server = app.listen(process.env.PORT, () => {
+const server = app.listen(process.env.PORT || 5001, "0.0.0.0", () => {
   console.log(`Sever listening on port ${process.env.PORT}`);
 });
