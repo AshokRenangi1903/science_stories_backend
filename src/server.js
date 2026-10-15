@@ -17,6 +17,7 @@ import progressRoutes from "./routes/progressRoutes.js";
 import quizAttemptRoutes from "./routes/quizAttempt/quizAttemptRoutes.js";
 import questionAttemptRoutes from "./routes/quizAttempt/questionAttemptRoutes.js";
 import ttsRoutes from "./routes/ttsRoutes.js";
+import imageUploadRoutes from "./routes/imageUploadRoutes.js";
 
 config();
 const app = express();
@@ -43,7 +44,7 @@ app.use(
   }),
 );
 app.use("/api/tts", ttsRoutes);
-
+app.use("/api/uploads", imageUploadRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboardAnalytics", dashboardAnalyticsRoutes);
 app.use("/api/eras", eraRoutes);
