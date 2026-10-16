@@ -254,3 +254,12 @@ model QuestionAttempt {
 
   @@unique([quizAttemptId, questionId])
 }
+
+model UploadedImage {
+  id        String   @id @default(uuid())
+  sha256    String   @unique
+  filename  String   @unique
+  imageUrl  String
+  sizeBytes Int
+  createdAt DateTime @default(now())
+}
