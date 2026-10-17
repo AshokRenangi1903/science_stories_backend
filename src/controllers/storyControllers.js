@@ -1,4 +1,22 @@
 import { prisma } from "../config/db.js";
+import { cleanupImageIfUnused } from "../helpers/imageCleanup.js";
+
+// Collect strings from nested StoryBlock JSON content.
+function collectStrings(value, result = []) {
+  if (typeof value === "string") {
+    result.push(value);
+  } else if (Array.isArray(value)) {
+    for (const item of value) {
+      collectStrings(item, result);
+    }
+  } else if (value && typeof value === "object") {
+    for (const item of Object.values(value)) {
+      collectStrings(item, result);
+    }
+  }
+
+  return result;
+}
 
 // Creating a new Story in an Era
 const createStory = async (req, res) => {
@@ -16,11 +34,19 @@ const createStory = async (req, res) => {
       geolocation,
       estimatedReadTime,
     } = req.body;
+
     const era = await prisma.era.findUnique({
       where: {
         id: req.params.eraId,
       },
     });
+
+    if (!era) {
+      return res.status(404).json({
+        status: "error",
+        message: "Era not found",
+      });
+    }
 
     const lastStory = await prisma.story.findFirst({
       where: {
@@ -30,12 +56,7 @@ const createStory = async (req, res) => {
         position: "desc",
       },
     });
-    if (!era) {
-      return res.status(404).json({
-        status: "error",
-        message: "Era not found",
-      });
-    }
+
     const story = await prisma.story.create({
       data: {
         title,
@@ -57,13 +78,13 @@ const createStory = async (req, res) => {
       },
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
       message: "Created a new Story.",
       data: story,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
       message: `${error.message}`,
     });
@@ -95,13 +116,13 @@ const getAllStories = async (req, res) => {
       ],
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
-      message: `Retrived the stories successfully`,
+      message: "Retrived the stories successfully",
       data: stories,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
       message: `${error.message}`,
     });
@@ -115,7 +136,9 @@ const getEraStories = async (req, res) => {
       where: {
         eraId: req.params.eraId,
       },
-      orderBy: { position: "asc" },
+      orderBy: {
+        position: "asc",
+      },
       include: {
         era: {
           select: {
@@ -126,45 +149,49 @@ const getEraStories = async (req, res) => {
       },
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
-      message: `Retrived the stories successfully`,
+      message: "Retrived the stories successfully",
       data: stories,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
       message: `${error.message}`,
     });
   }
 };
 
-// Get  a single  story
+// Get a single Story
 const getStory = async (req, res) => {
   try {
     const story = await prisma.story.findUnique({
-      where: { id: req.params.storyId },
+      where: {
+        id: req.params.storyId,
+      },
     });
+
     if (!story) {
       return res.status(404).json({
         status: "error",
         message: "There is no such story available!",
       });
     }
-    res.status(200).json({
+
+    return res.status(200).json({
       status: "success",
       message: `Retrived the ${story.title} story successfully`,
       data: story,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
       message: `${error.message}`,
     });
   }
 };
 
-// Updating a story
+// Updating a Story
 const updateStory = async (req, res) => {
   try {
     const {
@@ -194,12 +221,14 @@ const updateStory = async (req, res) => {
       });
     }
 
-    // Build update data
+    // Build update data; omitted fields remain unchanged.
     const updateData = {};
+
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
-    if (scientistNames !== undefined)
+    if (scientistNames !== undefined) {
       updateData.scientistNames = scientistNames;
+    }
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
     if (position !== undefined) updateData.position = position;
     if (isPopular !== undefined) updateData.isPopular = isPopular;
@@ -207,33 +236,54 @@ const updateStory = async (req, res) => {
     if (discipline !== undefined) updateData.discipline = discipline;
     if (subject !== undefined) updateData.subject = subject;
     if (geolocation !== undefined) updateData.geolocation = geolocation;
-    if (estimatedReadTime !== undefined)
+    if (estimatedReadTime !== undefined) {
       updateData.estimatedReadTime = estimatedReadTime;
+    }
 
     const updatedStory = await prisma.story.update({
-      where: { id: req.params.storyId },
+      where: {
+        id: req.params.storyId,
+      },
       data: updateData,
     });
 
-    res.status(200).json({
+    // Check the old image only if its URL changed.
+    if (
+      imageUrl !== undefined &&
+      story.imageUrl &&
+      story.imageUrl !== updatedStory.imageUrl
+    ) {
+      await cleanupImageIfUnused(story.imageUrl);
+    }
+
+    return res.status(200).json({
       status: "success",
       message: `Updated the ${updatedStory.title}  story Succesfully`,
       data: updatedStory,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
       message: error.message,
     });
   }
 };
 
-// Deleting a story
+// Deleting a Story
 const deleteStory = async (req, res) => {
   try {
+    // Fetch the Story and its blocks before deletion because
+    // related StoryBlocks may be cascade-deleted.
     const story = await prisma.story.findUnique({
       where: {
         id: req.params.storyId,
+      },
+      include: {
+        blocks: {
+          select: {
+            content: true,
+          },
+        },
       },
     });
 
@@ -244,14 +294,40 @@ const deleteStory = async (req, res) => {
       });
     }
 
-    await prisma.story.delete({ where: { id: req.params.storyId } });
+    // Collect candidate image URLs before deleting database records.
+    const imageUrls = new Set();
 
-    res.status(200).json({
+    if (story.imageUrl) {
+      imageUrls.add(story.imageUrl);
+    }
+
+    for (const block of story.blocks) {
+      for (const value of collectStrings(block.content)) {
+        if (value.startsWith("http://") || value.startsWith("https://")) {
+          imageUrls.add(value);
+        }
+      }
+    }
+
+    // Preserve the existing Story deletion operation.
+    await prisma.story.delete({
+      where: {
+        id: req.params.storyId,
+      },
+    });
+
+    // Cleanup runs only after the Story deletion succeeds.
+    // The helper checks whether each image is still referenced.
+    for (const imageUrl of imageUrls) {
+      await cleanupImageIfUnused(imageUrl);
+    }
+
+    return res.status(200).json({
       status: "success",
       message: `Deleted story : ${story.title}`,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
       message: `Something went wrong ${error.message}`,
     });
@@ -264,7 +340,6 @@ const reorderStories = async (req, res) => {
     const { eraId } = req.params;
     const { storyIds } = req.body;
 
-    // Validate eraId
     if (!eraId) {
       return res.status(400).json({
         success: false,
@@ -272,7 +347,6 @@ const reorderStories = async (req, res) => {
       });
     }
 
-    // Validate storyIds
     if (!Array.isArray(storyIds) || storyIds.length === 0) {
       return res.status(400).json({
         success: false,
@@ -280,13 +354,20 @@ const reorderStories = async (req, res) => {
       });
     }
 
-    // Check whether all stories belong to this era
+    // Reject duplicate IDs as well as IDs outside this Era.
+    if (new Set(storyIds).size !== storyIds.length) {
+      return res.status(400).json({
+        success: false,
+        message: "storyIds must not contain duplicates",
+      });
+    }
+
     const stories = await prisma.story.findMany({
       where: {
         id: {
           in: storyIds,
         },
-        eraId: eraId,
+        eraId,
       },
       select: {
         id: true,
@@ -300,7 +381,6 @@ const reorderStories = async (req, res) => {
       });
     }
 
-    // Update positions
     await prisma.$transaction(
       storyIds.map((storyId, index) =>
         prisma.story.update({

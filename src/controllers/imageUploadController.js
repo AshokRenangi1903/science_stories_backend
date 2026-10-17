@@ -22,7 +22,9 @@ const storage = multer.diskStorage({
   },
 
   filename: (_req, file, callback) => {
-    callback(null, `${crypto.randomUUID()}${allowedTypes[file.mimetype]}`);
+    const extension = allowedTypes[file.mimetype];
+
+    callback(null, `${crypto.randomUUID()}${extension}`);
   },
 });
 
@@ -32,6 +34,7 @@ const multerUpload = multer({
     fileSize: 5 * 1024 * 1024,
     files: 1,
   },
+
   fileFilter: (_req, file, callback) => {
     if (!allowedTypes[file.mimetype]) {
       return callback(
@@ -129,7 +132,8 @@ export const receiveImage = (req, res, next) => {
       }
 
       req.imageSha256 = await calculateSha256(req.file.path);
-      next();
+
+      return next();
     } catch (error) {
       await removeFile(req.file.path);
 
@@ -144,8 +148,19 @@ export const receiveImage = (req, res, next) => {
 };
 
 export const uploadImage = async (req, res) => {
+  const file = req.file;
+
+  if (!file || !req.imageSha256) {
+    await removeFile(file?.path);
+
+    return res.status(400).json({
+      status: "error",
+      message: "Please upload a valid image first.",
+    });
+  }
+
   if (!baseUrl) {
-    await removeFile(req.file?.path);
+    await removeFile(file.path);
 
     return res.status(500).json({
       status: "error",
@@ -153,10 +168,8 @@ export const uploadImage = async (req, res) => {
     });
   }
 
-  const file = req.file;
-
   try {
-    // 1. Check whether identical image content already exists.
+    // 1. Reuse an image when identical content already exists.
     const existingImage = await prisma.uploadedImage.findUnique({
       where: { sha256: req.imageSha256 },
     });
@@ -175,9 +188,10 @@ export const uploadImage = async (req, res) => {
       });
     }
 
-    // 2. Save metadata for a new image.
+    // 2. Create the public URL for the newly uploaded image.
     const imageUrl = `${baseUrl}/uploads/${file.filename}`;
 
+    // 3. Save metadata for the new managed image.
     const uploadedImage = await prisma.uploadedImage.create({
       data: {
         sha256: req.imageSha256,
@@ -197,28 +211,32 @@ export const uploadImage = async (req, res) => {
       },
     });
   } catch (error) {
-    // A concurrent request may have saved the same hash first.
+    // Another request may have registered identical content first.
     if (error.code === "P2002") {
-      const existingImage = await prisma.uploadedImage.findUnique({
-        where: { sha256: req.imageSha256 },
-      });
-
-      if (existingImage) {
-        await removeFile(file.path);
-
-        return res.status(200).json({
-          status: "success",
-          message: "Image already exists. Reusing the existing image.",
-          data: {
-            imageUrl: existingImage.imageUrl,
-            filename: existingImage.filename,
-            duplicate: true,
-          },
+      try {
+        const existingImage = await prisma.uploadedImage.findUnique({
+          where: { sha256: req.imageSha256 },
         });
+
+        if (existingImage) {
+          await removeFile(file.path);
+
+          return res.status(200).json({
+            status: "success",
+            message: "Image already exists. Reusing the existing image.",
+            data: {
+              imageUrl: existingImage.imageUrl,
+              filename: existingImage.filename,
+              duplicate: true,
+            },
+          });
+        }
+      } catch (lookupError) {
+        console.error("Could not retrieve duplicate image:", lookupError);
       }
     }
 
-    // Don't leave a file behind if its metadata wasn't saved.
+    // Remove the new file if its metadata could not be saved.
     await removeFile(file.path);
 
     console.error("Image upload failed:", error);
@@ -229,78 +247,3 @@ export const uploadImage = async (req, res) => {
     });
   }
 };
-
-// Recursively find image URLs inside StoryBlock JSON content.
-function collectStrings(value, result = []) {
-  if (typeof value === "string") {
-    result.push(value);
-  } else if (Array.isArray(value)) {
-    for (const item of value) collectStrings(item, result);
-  } else if (value && typeof value === "object") {
-    for (const item of Object.values(value)) {
-      collectStrings(item, result);
-    }
-  }
-
-  return result;
-}
-
-async function isImageInUse(imageUrl) {
-  const [era, story, blocks] = await Promise.all([
-    prisma.era.findFirst({
-      where: { imageUrl },
-      select: { id: true },
-    }),
-
-    prisma.story.findFirst({
-      where: { imageUrl },
-      select: { id: true },
-    }),
-
-    prisma.storyBlock.findMany({
-      select: { content: true },
-    }),
-  ]);
-
-  if (era || story) return true;
-
-  return blocks.some((block) =>
-    collectStrings(block.content).includes(imageUrl),
-  );
-}
-
-// Call this AFTER deleting the related database record.
-export async function cleanupImageIfUnused(imageUrl) {
-  if (!imageUrl) return;
-
-  const image = await prisma.uploadedImage.findUnique({
-    where: { imageUrl },
-  });
-
-  // Only manage files registered in UploadedImage.
-  if (!image) return;
-
-  // Never remove an image still referenced elsewhere.
-  if (await isImageInUse(image.imageUrl)) return;
-
-  const safePath = path.resolve(uploadDirectory, image.filename);
-
-  // Ensure the filename resolves directly inside our upload directory.
-  if (path.dirname(safePath) !== uploadDirectory) {
-    console.error("Refusing to delete an unsafe image path.");
-    return;
-  }
-
-  // Delete the metadata only if file cleanup succeeded or file is already gone.
-  try {
-    await fs.promises.unlink(safePath).catch((error) => {
-      if (error.code !== "ENOENT") throw error;
-    });
-
-    await prisma.uploadedImage.delete({
-      where: { id: image.id },
-    });
-  } catch (error) {
-    console.error("Unused image cleanup failed:", error);
-  }
-}
