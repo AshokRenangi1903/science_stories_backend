@@ -33,7 +33,8 @@ app.use(
       if (
         !origin ||
         origin.startsWith("http://localhost:") ||
-        origin === "https://science-stories.onrender.com"
+        origin === "https://science-stories.onrender.com" ||
+        origin === "https://admin.sciencestories.in"
       ) {
         callback(null, true);
       } else {
