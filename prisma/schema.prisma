@@ -59,16 +59,65 @@ model Story {
 
 
 model StoryBlock {
-  id         String   @id @default(uuid())
-  storyId     String
-  type ContentType
-  label     String? 
-  content Json?
-  position    Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String      @id @default(uuid())
+  storyId   String
+  type      ContentType
+  label     String?
+  content   Json?
+  position  Int
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
-  story       Story   @relation(fields: [storyId], references: [id],onDelete: Cascade)
+  story     Story       @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  sentences StoryBlockSentence[]
+}
+
+model StoryBlockSentence {
+  id           String   @id @default(uuid())
+  storyBlockId String
+  text         String
+  textHash     String
+  position     Int
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  storyBlock   StoryBlock    @relation(fields: [storyBlockId],references: [id],onDelete: Cascade)
+
+  audioVariants SentenceAudio[]
+
+  @@index([storyBlockId, position])
+  @@index([storyBlockId, textHash])
+}
+
+model SentenceAudio {
+  id            String   @id @default(uuid())
+  sentenceId    String
+  languageCode  String
+  voiceName     String
+
+  status        AudioGenerationStatus @default(PENDING)
+
+  audioUrl      String?
+  storagePath   String?
+  durationMs    Int?
+  errorMessage  String?
+  attemptCount  Int      @default(0)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sentence      StoryBlockSentence @relation(fields: [sentenceId],references: [id],onDelete: Cascade)
+
+  @@unique([sentenceId, languageCode, voiceName])
+  @@index([status])
+}
+
+enum AudioGenerationStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
 }
 
 enum ContentType {

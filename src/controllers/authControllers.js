@@ -47,8 +47,6 @@ const adminLogin = async (req, res) => {
 
 // Get Current Admin
 const getCurrentAdmin = async (req, res) => {
-  console.log("COOKIE:", req.cookies.ssjwt);
-
   res.status(200).json({
     success: true,
     message: "Cookie received",
