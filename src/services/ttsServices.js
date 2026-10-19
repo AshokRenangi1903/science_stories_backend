@@ -1,27 +1,19 @@
-import textToSpeech from "@google-cloud/text-to-speech";
 import "dotenv/config";
+import textToSpeech from "@google-cloud/text-to-speech";
 
-// For production level
-// const client = new textToSpeech.TextToSpeechClient({
-//   keyFilename: "/etc/secrets/google-tts-service-account.json",
-// });
+const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim();
 
-// For local development
-const client = new textToSpeech.TextToSpeechClient({
-  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-});
+const client = new textToSpeech.TextToSpeechClient(
+  credentialsPath ? { keyFilename: credentialsPath } : {},
+);
 
 const allowedVoices = new Set([
   "Algenib",
   "Algieba",
-  "Alnilam",
   "Charon",
-  "Umbriel",
   "Despina",
   "Erinome",
   "Gacrux",
-  "Vindemiatrix",
-  "Zephyr",
 ]);
 
 const synthesizeSpeech = async (
@@ -38,6 +30,7 @@ const synthesizeSpeech = async (
   const prefix = `${languageCode}-Chirp3-HD-`;
 
   if (
+    typeof voiceName !== "string" ||
     !voiceName.startsWith(prefix) ||
     !allowedVoices.has(voiceName.slice(prefix.length))
   ) {
@@ -56,6 +49,10 @@ const synthesizeSpeech = async (
       audioEncoding: "MP3",
     },
   });
+
+  if (!response.audioContent?.length) {
+    throw new Error("Google TTS returned empty audio");
+  }
 
   return response.audioContent;
 };
