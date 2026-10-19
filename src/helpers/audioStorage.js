@@ -1,6 +1,16 @@
 
+import "dotenv/config";
+
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  mkdir,
+  readFile,
+  rename,
+  stat,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 
 const AUDIO_DIR = path.resolve(
@@ -9,10 +19,8 @@ const AUDIO_DIR = path.resolve(
 );
 
 function getAudioFileKey(sentenceId, languageCode, voiceName) {
-  const key = `${sentenceId}\0${languageCode}\0${voiceName}`;
-
   return createHash("sha256")
-    .update(key)
+    .update(`${sentenceId}\0${languageCode}\0${voiceName}`)
     .digest("hex");
 }
 
@@ -30,22 +38,18 @@ async function saveSentenceAudio({
     throw new Error("Cannot save empty audio content");
   }
 
-  await mkdir(AUDIO_DIR, { recursive: true });
+  await mkdir(AUDIO_DIR, { recursive: true, mode: 0o755 });
 
-  const fileKey = getAudioFileKey(
-    sentenceId,
-    languageCode,
-    voiceName,
-  );
-
-  const filename = `${fileKey}.mp3`;
+  const filename =
+    `${getAudioFileKey(sentenceId, languageCode, voiceName)}.mp3`;
   const storagePath = path.join(AUDIO_DIR, filename);
 
-  // Reuse an existing non-empty file.
   try {
     const existing = await stat(storagePath);
 
     if (existing.isFile() && existing.size > 0) {
+      await chmod(storagePath, 0o644);
+
       return {
         storagePath,
         audioUrl: `/audio/${filename}`,
@@ -62,12 +66,17 @@ async function saveSentenceAudio({
   const audioBuffer = Buffer.from(audioContent);
   const temporaryPath = path.join(
     AUDIO_DIR,
-    `${fileKey}.${randomUUID()}.tmp`,
+    `${filename}.${randomUUID()}.tmp`,
   );
 
   try {
-    await writeFile(temporaryPath, audioBuffer, { flag: "wx" });
+    await writeFile(temporaryPath, audioBuffer, {
+      flag: "wx",
+      mode: 0o644,
+    });
+
     await rename(temporaryPath, storagePath);
+    await chmod(storagePath, 0o644);
   } catch (error) {
     await unlink(temporaryPath).catch(() => {});
     throw error;
