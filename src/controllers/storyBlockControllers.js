@@ -1,5 +1,7 @@
 import { prisma } from "../config/db.js";
 import { cleanupImageIfUnused } from "../helpers/imageCleanup.js";
+import { syncStoryBlockSentences } from "../helpers/sentenceSync.js";
+import { enqueueSentenceAudioJobs } from "../services/sentenceAudioQueue.js";
 
 // Collect strings from nested StoryBlock JSON content.
 function collectStrings(value, result = []) {
@@ -18,8 +20,7 @@ function collectStrings(value, result = []) {
   return result;
 }
 
-// Collect candidate URLs before the block content is changed/deleted.
-// The cleanup helper will ignore URLs not registered in UploadedImage.
+// Collect candidate URLs before block content changes/deletes.
 function collectImageUrls(content) {
   return new Set(
     collectStrings(content).filter(
@@ -28,21 +29,34 @@ function collectImageUrls(content) {
   );
 }
 
-// Creating a story block
+// Enqueue only newly created sentences, after the transaction commits.
+async function enqueueCreatedSentences(sentenceIds) {
+  for (const sentenceId of sentenceIds) {
+    try {
+      await enqueueSentenceAudioJobs(sentenceId);
+    } catch (error) {
+      console.error(
+        `Failed to enqueue audio for sentence ${sentenceId}:`,
+        error.message,
+      );
+    }
+  }
+}
+
+// Create a StoryBlock.
 const createStoryBlock = async (req, res) => {
   try {
     const { type, label, content } = req.body;
+    const { storyId } = req.params;
 
     const story = await prisma.story.findUnique({
-      where: {
-        id: req.params.storyId,
-      },
+      where: { id: storyId },
     });
 
     if (!story) {
       return res.status(404).json({
         status: "error",
-        message: "There is no  story to create Story Blocks !",
+        message: "There is no story to create StoryBlocks for.",
       });
     }
 
@@ -54,15 +68,11 @@ const createStoryBlock = async (req, res) => {
     }
 
     const lastStoryBlock = await prisma.storyBlock.findFirst({
-      where: {
-        storyId: req.params.storyId,
-      },
-      orderBy: {
-        position: "desc",
-      },
+      where: { storyId },
+      orderBy: { position: "desc" },
     });
 
-    const storyBlock = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const createdBlock = await tx.storyBlock.create({
         data: {
           storyId: story.id,
@@ -73,44 +83,51 @@ const createStoryBlock = async (req, res) => {
         },
       });
 
+      const { createdSentenceIds } = await syncStoryBlockSentences(
+        tx,
+        createdBlock,
+      );
+
       await tx.story.update({
         where: { id: story.id },
-        data: {
-          updatedAt: new Date(),
-        },
+        data: { updatedAt: new Date() },
       });
 
-      return createdBlock;
+      return {
+        storyBlock: createdBlock,
+        createdSentenceIds,
+      };
     });
+
+    // Run only after the database transaction succeeds.
+    await enqueueCreatedSentences(result.createdSentenceIds);
 
     return res.status(201).json({
       status: "success",
-      message: `Created ${storyBlock.type} block successfully.`,
-      data: storyBlock,
+      message: `Created ${result.storyBlock.type} block successfully.`,
+      data: result.storyBlock,
     });
   } catch (error) {
+    console.error("createStoryBlock error:", error);
+
     return res.status(500).json({
       status: "error",
-      message: `${error.message}`,
+      message: error.message,
     });
   }
 };
 
-// Get all blocks of a story
+// Get all blocks of a story.
 const getStoryBlocks = async (req, res) => {
   try {
     const storyBlocks = await prisma.storyBlock.findMany({
-      where: {
-        storyId: req.params.storyId,
-      },
-      orderBy: {
-        position: "asc",
-      },
+      where: { storyId: req.params.storyId },
+      orderBy: { position: "asc" },
     });
 
     return res.status(200).json({
       status: "success",
-      message: "Retrived the story-blocks successfully",
+      message: "Retrieved the story blocks successfully.",
       data: storyBlocks,
     });
   } catch (error) {
@@ -121,15 +138,14 @@ const getStoryBlocks = async (req, res) => {
   }
 };
 
-// Update a story block
+// Update a StoryBlock.
 const updateStoryBlock = async (req, res) => {
   try {
     const { label, content } = req.body;
+    const { id } = req.params;
 
     const storyBlock = await prisma.storyBlock.findUnique({
-      where: {
-        id: req.params.id,
-      },
+      where: { id },
     });
 
     if (!storyBlock) {
@@ -139,38 +155,56 @@ const updateStoryBlock = async (req, res) => {
       });
     }
 
-    // Build update data. Omitted fields remain unchanged.
+    // Omitted fields remain unchanged.
     const updateData = {};
 
-    if (label !== undefined) updateData.label = label;
-    if (content !== undefined) updateData.content = content;
+    if (label !== undefined) {
+      updateData.label = label;
+    }
 
-    // Collect old image URLs before changing the content.
+    if (content !== undefined) {
+      updateData.content = content;
+    }
+
     const oldImageUrls =
       content !== undefined ? collectImageUrls(storyBlock.content) : new Set();
 
-    // Update the block and its parent Story atomically.
-    const updatedStoryBlock = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       await tx.storyBlock.update({
-        where: { id: req.params.id },
+        where: { id },
         data: updateData,
       });
 
+      const updatedBlock = await tx.storyBlock.findUnique({
+        where: { id },
+      });
+
+      let createdSentenceIds = [];
+
+      // Synchronize sentences only when content changes.
+      if (content !== undefined) {
+        const syncResult = await syncStoryBlockSentences(tx, updatedBlock);
+
+        createdSentenceIds = syncResult.createdSentenceIds;
+      }
+
       await tx.story.update({
         where: { id: storyBlock.storyId },
-        data: {
-          updatedAt: new Date(),
-        },
+        data: { updatedAt: new Date() },
       });
 
-      return tx.storyBlock.findUnique({
-        where: { id: req.params.id },
-      });
+      return {
+        updatedBlock,
+        createdSentenceIds,
+      };
     });
 
-    // Only consider old URLs after the database update succeeds.
+    // Enqueue new sentences after the transaction commits.
+    await enqueueCreatedSentences(result.createdSentenceIds);
+
+    // Clean up removed images only after a successful update.
     if (content !== undefined) {
-      const newImageUrls = collectImageUrls(updatedStoryBlock.content);
+      const newImageUrls = collectImageUrls(result.updatedBlock.content);
 
       for (const oldImageUrl of oldImageUrls) {
         if (!newImageUrls.has(oldImageUrl)) {
@@ -182,9 +216,11 @@ const updateStoryBlock = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: "Updated the story block successfully!",
-      data: updatedStoryBlock,
+      data: result.updatedBlock,
     });
   } catch (error) {
+    console.error("updateStoryBlock error:", error);
+
     return res.status(500).json({
       status: "error",
       message: error.message,
@@ -192,51 +228,46 @@ const updateStoryBlock = async (req, res) => {
   }
 };
 
-// Deleting a story block
+// Delete a StoryBlock.
 const deleteStoryBlock = async (req, res) => {
   try {
+    const { id } = req.params;
+
     const storyBlock = await prisma.storyBlock.findUnique({
-      where: {
-        id: req.params.id,
-      },
+      where: { id },
     });
 
     if (!storyBlock) {
       return res.status(404).json({
         status: "error",
-        message: "There no StoryBlock to delete",
+        message: "There is no StoryBlock to delete.",
       });
     }
 
-    // Collect URLs before deleting the block's content.
     const imageUrls = collectImageUrls(storyBlock.content);
 
-    // Delete the block and update the parent Story atomically.
     await prisma.$transaction(async (tx) => {
       await tx.storyBlock.delete({
-        where: {
-          id: req.params.id,
-        },
+        where: { id },
       });
 
       await tx.story.update({
         where: { id: storyBlock.storyId },
-        data: {
-          updatedAt: new Date(),
-        },
+        data: { updatedAt: new Date() },
       });
     });
 
-    // Cleanup only after successful database deletion.
     for (const imageUrl of imageUrls) {
       await cleanupImageIfUnused(imageUrl);
     }
 
     return res.status(200).json({
       status: "success",
-      message: "Story Block deleted Successfully",
+      message: "StoryBlock deleted successfully.",
     });
   } catch (error) {
+    console.error("deleteStoryBlock error:", error);
+
     return res.status(500).json({
       status: "error",
       message: error.message,
@@ -244,26 +275,22 @@ const deleteStoryBlock = async (req, res) => {
   }
 };
 
-// Reordering the Story Blocks
+// Reorder StoryBlocks.
 const reorderStoryBlocks = async (req, res) => {
   try {
     const { storyId } = req.params;
     const { orderedIds } = req.body;
 
-    if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+    if (!Array.isArray(orderedIds)) {
       return res.status(400).json({
         status: "error",
-        message: "Bad Reorder Request!!",
+        message: "orderedIds must be an array.",
       });
     }
 
     const blocks = await prisma.storyBlock.findMany({
-      where: {
-        storyId,
-      },
-      select: {
-        id: true,
-      },
+      where: { storyId },
+      select: { id: true },
     });
 
     const blockIds = blocks.map((block) => block.id);
@@ -271,7 +298,7 @@ const reorderStoryBlocks = async (req, res) => {
     if (orderedIds.length !== blockIds.length) {
       return res.status(400).json({
         status: "error",
-        message: "Length of blocks are not matching!!",
+        message: "Length of blocks are not matching!",
       });
     }
 
@@ -281,14 +308,14 @@ const reorderStoryBlocks = async (req, res) => {
     if (orderedIdsSet.size !== orderedIds.length) {
       return res.status(400).json({
         status: "error",
-        message: "Duplicate block IDs are not allowed",
+        message: "Duplicate block IDs are not allowed.",
       });
     }
 
     if (orderedIds.some((id) => !blockIdsSet.has(id))) {
       return res.status(400).json({
         status: "error",
-        message: "One or more block IDs are invalid",
+        message: "One or more block IDs are invalid.",
       });
     }
 
@@ -296,34 +323,26 @@ const reorderStoryBlocks = async (req, res) => {
       async (tx) => {
         for (let index = 0; index < orderedIds.length; index++) {
           await tx.storyBlock.update({
-            where: {
-              id: orderedIds[index],
-            },
-            data: {
-              position: index + 1,
-            },
+            where: { id: orderedIds[index] },
+            data: { position: index + 1 },
           });
         }
 
         await tx.story.update({
-          where: {
-            id: storyId,
-          },
-          data: {
-            updatedAt: new Date(),
-          },
+          where: { id: storyId },
+          data: { updatedAt: new Date() },
         });
       },
-      {
-        timeout: 10000,
-      },
+      { timeout: 10000 },
     );
 
     return res.status(200).json({
       status: "success",
-      message: "Story blocks reordered successfully",
+      message: "Story blocks reordered successfully.",
     });
   } catch (error) {
+    console.error("reorderStoryBlocks error:", error);
+
     return res.status(500).json({
       status: "error",
       message: error.message,
@@ -335,6 +354,6 @@ export {
   createStoryBlock,
   deleteStoryBlock,
   getStoryBlocks,
-  updateStoryBlock,
   reorderStoryBlocks,
+  updateStoryBlock,
 };

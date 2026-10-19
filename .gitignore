@@ -51,3 +51,6 @@
 node_modules/
 prisma/schema.previous.prisma
 prisma/uploaded_image_migration.sql
+
+# Generated audio files
+/storage/audio/

@@ -2,14 +2,14 @@ import textToSpeech from "@google-cloud/text-to-speech";
 import "dotenv/config";
 
 // For production level
-const client = new textToSpeech.TextToSpeechClient({
-  keyFilename: "/etc/secrets/google-tts-service-account.json",
-});
+// const client = new textToSpeech.TextToSpeechClient({
+//   keyFilename: "/etc/secrets/google-tts-service-account.json",
+// });
 
 // For local development
-// const client = new textToSpeech.TextToSpeechClient({
-//   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-// });
+const client = new textToSpeech.TextToSpeechClient({
+  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+});
 
 const allowedVoices = new Set([
   "Algenib",
