@@ -29,21 +29,7 @@ function collectImageUrls(content) {
   );
 }
 
-// Enqueue only newly created sentences, after the transaction commits.
-async function enqueueCreatedSentences(sentenceIds) {
-  for (const sentenceId of sentenceIds) {
-    try {
-      await enqueueSentenceAudioJobs(sentenceId);
-    } catch (error) {
-      console.error(
-        `Failed to enqueue audio for sentence ${sentenceId}:`,
-        error.message,
-      );
-    }
-  }
-}
-
-// Create a StoryBlock.
+// Create a StoryBlock and its sentence/audio jobs atomically.
 const createStoryBlock = async (req, res) => {
   try {
     const { type, label, content } = req.body;
@@ -88,24 +74,23 @@ const createStoryBlock = async (req, res) => {
         createdBlock,
       );
 
+      // Create all 12 audio jobs inside the same transaction.
+      for (const sentenceId of createdSentenceIds) {
+        await enqueueSentenceAudioJobs(sentenceId, tx);
+      }
+
       await tx.story.update({
         where: { id: story.id },
         data: { updatedAt: new Date() },
       });
 
-      return {
-        storyBlock: createdBlock,
-        createdSentenceIds,
-      };
+      return createdBlock;
     });
-
-    // Run only after the database transaction succeeds.
-    await enqueueCreatedSentences(result.createdSentenceIds);
 
     return res.status(201).json({
       status: "success",
-      message: `Created ${result.storyBlock.type} block successfully.`,
-      data: result.storyBlock,
+      message: `Created ${result.type} block successfully.`,
+      data: result,
     });
   } catch (error) {
     console.error("createStoryBlock error:", error);
@@ -131,6 +116,8 @@ const getStoryBlocks = async (req, res) => {
       data: storyBlocks,
     });
   } catch (error) {
+    console.error("getStoryBlocks error:", error);
+
     return res.status(500).json({
       status: "error",
       message: error.message,
@@ -169,23 +156,27 @@ const updateStoryBlock = async (req, res) => {
     const oldImageUrls =
       content !== undefined ? collectImageUrls(storyBlock.content) : new Set();
 
-    const result = await prisma.$transaction(async (tx) => {
+    const updatedBlock = await prisma.$transaction(async (tx) => {
       await tx.storyBlock.update({
         where: { id },
         data: updateData,
       });
 
-      const updatedBlock = await tx.storyBlock.findUnique({
+      const currentBlock = await tx.storyBlock.findUnique({
         where: { id },
       });
 
-      let createdSentenceIds = [];
-
-      // Synchronize sentences only when content changes.
+      // Only synchronize sentences when content is provided.
       if (content !== undefined) {
-        const syncResult = await syncStoryBlockSentences(tx, updatedBlock);
+        const { createdSentenceIds } = await syncStoryBlockSentences(
+          tx,
+          currentBlock,
+        );
 
-        createdSentenceIds = syncResult.createdSentenceIds;
+        // New sentences and their audio jobs commit together.
+        for (const sentenceId of createdSentenceIds) {
+          await enqueueSentenceAudioJobs(sentenceId, tx);
+        }
       }
 
       await tx.story.update({
@@ -193,22 +184,24 @@ const updateStoryBlock = async (req, res) => {
         data: { updatedAt: new Date() },
       });
 
-      return {
-        updatedBlock,
-        createdSentenceIds,
-      };
+      return currentBlock;
     });
-
-    // Enqueue new sentences after the transaction commits.
-    await enqueueCreatedSentences(result.createdSentenceIds);
 
     // Clean up removed images only after a successful update.
     if (content !== undefined) {
-      const newImageUrls = collectImageUrls(result.updatedBlock.content);
+      const newImageUrls = collectImageUrls(updatedBlock.content);
 
       for (const oldImageUrl of oldImageUrls) {
         if (!newImageUrls.has(oldImageUrl)) {
-          await cleanupImageIfUnused(oldImageUrl);
+          try {
+            await cleanupImageIfUnused(oldImageUrl);
+          } catch (error) {
+            // Image cleanup must not undo a successful database update.
+            console.error(
+              `Image cleanup failed for ${oldImageUrl}:`,
+              error.message,
+            );
+          }
         }
       }
     }
@@ -216,7 +209,7 @@ const updateStoryBlock = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: "Updated the story block successfully!",
-      data: result.updatedBlock,
+      data: updatedBlock,
     });
   } catch (error) {
     console.error("updateStoryBlock error:", error);
@@ -258,7 +251,11 @@ const deleteStoryBlock = async (req, res) => {
     });
 
     for (const imageUrl of imageUrls) {
-      await cleanupImageIfUnused(imageUrl);
+      try {
+        await cleanupImageIfUnused(imageUrl);
+      } catch (error) {
+        console.error(`Image cleanup failed for ${imageUrl}:`, error.message);
+      }
     }
 
     return res.status(200).json({
@@ -312,7 +309,7 @@ const reorderStoryBlocks = async (req, res) => {
       });
     }
 
-    if (orderedIds.some((id) => !blockIdsSet.has(id))) {
+    if (orderedIds.some((blockId) => !blockIdsSet.has(blockId))) {
       return res.status(400).json({
         status: "error",
         message: "One or more block IDs are invalid.",

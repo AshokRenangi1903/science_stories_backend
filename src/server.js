@@ -1,9 +1,16 @@
-import express, { urlencoded } from "express";
+
+import express from "express";
 import { config } from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
-// Importing routes
+import { prisma } from "./config/db.js";
+import {
+  startSentenceAudioWorker,
+  stopSentenceAudioWorker,
+} from "./services/sentenceAudioWorker.js";
+
+// Existing routes
 import eraRoutes from "./routes/eraRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import dashboardAnalyticsRoutes from "./routes/dashboardAnalyticsRoutes.js";
@@ -20,13 +27,13 @@ import ttsRoutes from "./routes/ttsRoutes.js";
 import imageUploadRoutes from "./routes/imageUploadRoutes.js";
 
 config();
-const app = express();
 
-// Body parsing Middlewares
+const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -44,6 +51,8 @@ app.use(
     credentials: true,
   }),
 );
+
+// Preserve all existing API routes.
 app.use("/api/tts", ttsRoutes);
 app.use("/api/uploads", imageUploadRoutes);
 app.use("/api/auth", authRoutes);
@@ -59,6 +68,46 @@ app.use("/api/progress", progressRoutes);
 app.use("/api/quizAttempt", quizAttemptRoutes);
 app.use("/api/questionAttempt", questionAttemptRoutes);
 
-const server = app.listen(process.env.PORT || 5001, "0.0.0.0", () => {
-  console.log(`Sever listening on port ${process.env.PORT}`);
+const PORT = Number(process.env.PORT) || 5001;
+
+const server = app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server listening on port ${PORT}`);
+
+  // Audio generation happens in the background.
+  startSentenceAudioWorker().catch((error) => {
+    console.error("Sentence audio worker stopped unexpectedly:", error);
+  });
 });
+
+let shuttingDown = false;
+
+async function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+
+  console.log(`${signal} received. Shutting down gracefully...`);
+
+  // Stop accepting new HTTP requests.
+  server.close(async (error) => {
+    if (error) {
+      console.error("HTTP server shutdown error:", error);
+    }
+
+    try {
+      await stopSentenceAudioWorker();
+    } catch (workerError) {
+      console.error("Worker shutdown error:", workerError);
+    }
+
+    try {
+      await prisma.$disconnect();
+    } catch (dbError) {
+      console.error("Database disconnect error:", dbError);
+    }
+
+    process.exit(error ? 1 : 0);
+  });
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
