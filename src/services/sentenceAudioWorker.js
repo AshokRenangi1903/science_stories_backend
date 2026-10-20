@@ -1,6 +1,7 @@
 import { prisma } from "../config/db.js";
 import { synthesizeSpeech } from "./ttsServices.js";
 import { saveSentenceAudio } from "../helpers/audioStorage.js";
+import { parseBuffer } from "music-metadata";
 
 const MAX_ATTEMPTS = 3;
 const POLL_INTERVAL_MS = 3000;
@@ -72,6 +73,11 @@ async function processSentenceAudioJob(audioJobId) {
       job.voiceName,
       job.languageCode,
     );
+    const metadata = await parseBuffer(audioContent, "audio/mpeg");
+
+    const durationMs = Number.isFinite(metadata.format.duration)
+      ? Math.round(metadata.format.duration * 1000)
+      : null;
 
     const saved = await saveSentenceAudio({
       sentenceId: job.sentenceId,
@@ -87,6 +93,7 @@ async function processSentenceAudioJob(audioJobId) {
         audioUrl: saved.audioUrl,
         storagePath: saved.storagePath,
         errorMessage: null,
+        durationMs,
       },
     });
 
