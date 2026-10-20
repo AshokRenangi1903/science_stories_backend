@@ -108,8 +108,26 @@ const getStoryBlocks = async (req, res) => {
     const storyBlocks = await prisma.storyBlock.findMany({
       where: { storyId: req.params.storyId },
       orderBy: { position: "asc" },
+      include: {
+        sentences: {
+          orderBy: { position: "asc" },
+          select: {
+            id: true,
+            text: true,
+            position: true,
+            audioVariants: {
+              select: {
+                languageCode: true,
+                voiceName: true,
+                status: true,
+                audioUrl: true,
+                durationMs: true,
+              },
+            },
+          },
+        },
+      },
     });
-
     return res.status(200).json({
       status: "success",
       message: "Retrieved the story blocks successfully.",
