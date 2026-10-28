@@ -183,41 +183,48 @@ model Option {
 }
 
 model User {
-  id           String    @id @default(uuid())
+  id             String   @id @default(uuid())
+  name           String
+  email          String   @unique
+  profileImage   String?
+  password       String?
+  grade          String?
+  age            Int?
 
-  name         String
-  email        String    @unique
-  profileImage String?
-  password     String?
+  // Email verification
+  isVerified     Boolean  @default(false)
 
-  grade String?
-
-   // Email Verification
-  isVerified      Boolean   @default(false)
+  // Session management
+  sessionVersion Int      @default(0)
 
   // Authorization
-  role         UserRole  @default(STUDENT)
-  isActive     Boolean   @default(true)
+  role           UserRole @default(STUDENT)
+  isActive       Boolean  @default(true)
 
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   storyProgresses StoryProgress[]
-
-  quizAttempts QuizAttempt[]
+  quizAttempts    QuizAttempt[]
 }
 
 model EmailOTP {
-  id         String   @id @default(uuid())
+  id        String    @id @default(uuid())
+  email     String
+  otp       String
+  purpose   OTPPurpose
+  name      String?
+  age       Int?
+  attempts  Int       @default(0)
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
 
-  email      String
-  otp        String
+  @@index([email, purpose])
+}
 
-  expiresAt  DateTime
-
-  createdAt  DateTime @default(now())
+enum OTPPurpose {
+  REGISTER
+  RESET_PASSWORD
 }
 
 enum UserRole {

@@ -10,31 +10,22 @@ import {
   updateProfile,
 } from "../controllers/userControllers.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
+import {
+  registerLimiter,
+  verifyOTPLimiter,
+  forgotPasswordLimiter,
+  resetPasswordLimiter,
+} from "../middleware/rateLimiters.js";
 
 const router = express.Router();
 
-// User Registration
-router.post("/registerUser", registerUser);
-
-// Verifying OTP
-router.post("/verifyOTP", verifyOTP);
-
-// Login User
+router.post("/registerUser", registerLimiter, registerUser);
+router.post("/verifyOTP", verifyOTPLimiter, verifyOTP);
 router.post("/loginUser", loginUser);
-
-// Forgot Password - Sends OTP to user
-router.post("/forgotPassword", forgotPassword);
-
-// Reset Password
-router.put("/resetPassword", resetPassword);
-
-// Me
+router.post("/forgotPassword", forgotPasswordLimiter, forgotPassword);
+router.put("/resetPassword", resetPasswordLimiter, resetPassword);
 router.get("/me", authMiddleware, getProfile);
-
-// update profile
 router.put("/updateProfile", authMiddleware, updateProfile);
-
-// User logout
-router.post("/logoutUser", logoutUser);
+router.post("/logoutUser", authMiddleware, logoutUser);
 
 export default router;
