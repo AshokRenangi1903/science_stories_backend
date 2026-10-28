@@ -1,4 +1,3 @@
-
 import express from "express";
 import { config } from "dotenv";
 import cors from "cors";
@@ -29,7 +28,7 @@ import imageUploadRoutes from "./routes/imageUploadRoutes.js";
 config();
 
 const app = express();
-
+app.set("trust proxy", 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
