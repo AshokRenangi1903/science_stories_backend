@@ -31,7 +31,7 @@ const adminLogin = async (req, res) => {
   }
 
   // Generate JWT token
-  const token = generateToken(admin.id, res);
+  const token = generateToken(admin.id, admin.sessionVersion, res);
 
   // Login Success
   res.status(200).json({
