@@ -442,10 +442,9 @@ const forgotPassword = async (req, res) => {
 
     // Avoid revealing whether an email is registered.
     if (!user) {
-      return res.status(200).json({
-        status: "success",
-        message:
-          "If this email is registered, a verification code will be sent",
+      return res.status(404).json({
+        status: "error",
+        message: "No account found with this email address",
       });
     }
 
