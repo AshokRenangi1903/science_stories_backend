@@ -9,12 +9,6 @@ import { CreatorRoles } from "../utils/roles.js";
 
 const router = express.Router();
 
-router.post(
-  "/image",
-  authMiddleware,
-  allowRoles(...CreatorRoles),
-  receiveImage,
-  uploadImage,
-);
+router.post("/image", authMiddleware, receiveImage, uploadImage);
 
 export default router;
