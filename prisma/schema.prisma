@@ -186,6 +186,8 @@ model User {
   id             String   @id @default(uuid())
   name           String
   email          String   @unique
+
+  googleId String? @unique
   profileImage   String?
   password       String?
   grade          String?

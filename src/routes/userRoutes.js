@@ -3,6 +3,7 @@ import {
   registerUser,
   verifyOTP,
   loginUser,
+  googleLogin,
   refreshAccessToken,
   getProfile,
   forgotPassword,
@@ -26,7 +27,10 @@ router.post("/registerUser", registerLimiter, registerUser);
 router.post("/verifyOTP", verifyOTPLimiter, verifyOTP);
 router.post("/loginUser", loginUser);
 
-// Public route protected by its own refresh-token validation.
+// Google authentication
+router.post("/googleLogin", googleLogin);
+
+// Refresh-token validation
 router.post("/refreshToken", refreshAccessToken);
 
 router.post("/forgotPassword", forgotPasswordLimiter, forgotPassword);

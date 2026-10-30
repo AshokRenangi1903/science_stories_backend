@@ -6,6 +6,7 @@ import { generateToken } from "../utils/generateToken.js";
 import { createUserSession } from "../services/sessionService.js";
 import { sendOTPEmail, sendWelcomeEmail } from "../config/emailConfig.js";
 import { generateOTP } from "../utils/generateOTP.js";
+import { verifyGoogleIdToken } from "../services/googleAuthService.js";
 
 // --------------------------------------------------
 // Helpers
@@ -385,6 +386,136 @@ const loginUser = async (req, res) => {
   }
 };
 
+// --------------------------------------------------
+// GOOGLE LOGIN
+// Verifies Google identity and creates a normal app session.
+// --------------------------------------------------
+
+const googleLogin = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (typeof idToken !== "string" || !idToken.trim()) {
+      return res.status(400).json({
+        status: "error",
+        message: "Google ID token is required",
+      });
+    }
+
+    // Verify the token directly with Google.
+    const googleUser = await verifyGoogleIdToken(idToken);
+
+    // First check whether this Google account is already linked.
+    let user = await prisma.user.findUnique({
+      where: { googleId: googleUser.googleId },
+    });
+
+    if (!user) {
+      // Check whether an account with this verified email already exists.
+      const existingUser = await prisma.user.findUnique({
+        where: { email: googleUser.email },
+      });
+
+      if (existingUser) {
+        if (!existingUser.isVerified) {
+          return res.status(403).json({
+            status: "error",
+            message: "Please verify your existing account first.",
+          });
+        }
+
+        if (
+          existingUser.role !== "STUDENT" &&
+          existingUser.role !== "PREMIUM_STUDENT"
+        ) {
+          return res.status(403).json({
+            status: "error",
+            message: "Google login is available only for student accounts.",
+          });
+        }
+
+        if (!existingUser.isActive) {
+          return res.status(403).json({
+            status: "error",
+            message: "Your account is currently inactive.",
+          });
+        }
+
+        // Link the verified Google identity to the existing account.
+        user = await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            googleId: googleUser.googleId,
+            profileImage: existingUser.profileImage || googleUser.profileImage,
+          },
+        });
+      } else {
+        // Create a new Google-based student account.
+        user = await prisma.user.create({
+          data: {
+            name: googleUser.name,
+            email: googleUser.email,
+            googleId: googleUser.googleId,
+            profileImage: googleUser.profileImage,
+            password: null,
+            isVerified: true,
+            role: "STUDENT",
+          },
+        });
+      }
+    }
+
+    if (!user.isActive || !user.isVerified) {
+      return res.status(403).json({
+        status: "error",
+        message: "Your account cannot currently sign in.",
+      });
+    }
+
+    if (user.role !== "STUDENT" && user.role !== "PREMIUM_STUDENT") {
+      return res.status(403).json({
+        status: "error",
+        message: "Google login is available only for student accounts.",
+      });
+    }
+
+    // Latest login wins: invalidate previous sessions.
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        sessionVersion: { increment: 1 },
+      },
+    });
+
+    const refreshToken = await createUserSession(user.id, user.sessionVersion);
+
+    const token = generateToken(user.id, user.sessionVersion, res);
+
+    const { password: _password, ...safeUser } = user;
+
+    return res.status(200).json({
+      status: "success",
+      message: "Google login successful",
+      token,
+      refreshToken,
+      data: safeUser,
+    });
+  } catch (error) {
+    console.error("googleLogin error:", error);
+
+    if (error.code === "P2002") {
+      return res.status(409).json({
+        status: "error",
+        message: "This Google account or email is already linked.",
+      });
+    }
+
+    return res.status(401).json({
+      status: "error",
+      message: "Google authentication failed.",
+    });
+  }
+};
 // --------------------------------------------------
 // REFRESH ACCESS TOKEN
 // Validates and rotates the refresh token.
@@ -925,4 +1056,5 @@ export {
   resetPassword,
   logoutUser,
   updateProfile,
+  googleLogin,
 };
