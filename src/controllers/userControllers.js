@@ -1,6 +1,9 @@
 import { prisma } from "../config/db.js";
+import crypto from "crypto";
+import { generateRefreshToken } from "../utils/generateRefreshToken.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../utils/generateToken.js";
+import { createUserSession } from "../services/sessionService.js";
 import { sendOTPEmail, sendWelcomeEmail } from "../config/emailConfig.js";
 import { generateOTP } from "../utils/generateOTP.js";
 
@@ -66,7 +69,6 @@ const registerUser = async (req, res) => {
       });
     }
 
-    // Remove only previous registration OTPs.
     await prisma.emailOTP.deleteMany({
       where: {
         email: normalizedEmail,
@@ -98,7 +100,6 @@ const registerUser = async (req, res) => {
         "Complete your Science Stories registration",
       );
     } catch (emailError) {
-      // Don't leave a usable OTP if delivery failed.
       await prisma.emailOTP.deleteMany({
         where: {
           email: normalizedEmail,
@@ -125,7 +126,7 @@ const registerUser = async (req, res) => {
 
 // --------------------------------------------------
 // VERIFY OTP
-// Creates the User only after successful verification.
+// Creates User and Session after successful verification.
 // Request body: { email, otp, password }
 // --------------------------------------------------
 
@@ -260,6 +261,12 @@ const verifyOTP = async (req, res) => {
       },
     });
 
+    // Create refresh-token session.
+    const refreshToken = await createUserSession(user.id, user.sessionVersion);
+
+    // Generate 15-minute access token.
+    const token = generateToken(user.id, user.sessionVersion, res);
+
     // Welcome email failure should not undo registration.
     try {
       await sendWelcomeEmail(user.name, user.email);
@@ -267,14 +274,13 @@ const verifyOTP = async (req, res) => {
       console.error("Welcome email failed:", emailError.message);
     }
 
-    const token = generateToken(user.id, user.sessionVersion, res);
-
     const { password: _password, ...safeUser } = user;
 
     return res.status(201).json({
       status: "success",
       message: "Registration completed successfully",
       token,
+      refreshToken,
       data: safeUser,
     });
   } catch (error) {
@@ -345,7 +351,7 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // Incrementing this invalidates previously issued JWTs.
+    // Incrementing this invalidates previously issued access tokens.
     const user = await prisma.user.update({
       where: { id: existingUser.id },
       data: {
@@ -353,6 +359,11 @@ const loginUser = async (req, res) => {
       },
     });
 
+    // Create a new refresh-token session.
+    // Previous sessions are removed inside createUserSession.
+    const refreshToken = await createUserSession(user.id, user.sessionVersion);
+
+    // Generate 15-minute access token.
     const token = generateToken(user.id, user.sessionVersion, res);
 
     const { password: _password, ...safeUser } = user;
@@ -361,6 +372,7 @@ const loginUser = async (req, res) => {
       status: "success",
       message: "Login successful",
       token,
+      refreshToken,
       data: safeUser,
     });
   } catch (error) {
@@ -369,6 +381,123 @@ const loginUser = async (req, res) => {
     return res.status(500).json({
       status: "error",
       message: "Unable to log in right now",
+    });
+  }
+};
+
+// --------------------------------------------------
+// REFRESH ACCESS TOKEN
+// Validates and rotates the refresh token.
+// Does not require authMiddleware.
+// --------------------------------------------------
+
+const refreshAccessToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (typeof refreshToken !== "string" || !refreshToken.trim()) {
+      return res.status(400).json({
+        status: "error",
+        message: "Refresh token is required",
+      });
+    }
+
+    // Hash the received refresh token to find its session.
+    const oldTokenHash = crypto
+      .createHash("sha256")
+      .update(refreshToken)
+      .digest("hex");
+
+    const now = new Date();
+
+    const session = await prisma.session.findUnique({
+      where: {
+        refreshTokenHash: oldTokenHash,
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    if (
+      !session ||
+      session.expiresAt <= now ||
+      !session.user.isActive ||
+      !session.user.isVerified ||
+      session.sessionVersion !== session.user.sessionVersion
+    ) {
+      return res.status(401).json({
+        status: "error",
+        message: "Refresh token is invalid or expired. Please log in again.",
+      });
+    }
+
+    // Generate a new refresh token and its hash.
+    const { refreshToken: newRefreshToken, refreshTokenHash: newTokenHash } =
+      generateRefreshToken();
+
+    // Sliding expiry: 30 days from this successful refresh.
+    const newExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    // Atomically rotate the token.
+    // Only one request using the old token can succeed.
+    const rotation = await prisma.$transaction(async (tx) => {
+      const currentUser = await tx.user.findUnique({
+        where: { id: session.userId },
+      });
+
+      if (
+        !currentUser ||
+        !currentUser.isActive ||
+        !currentUser.isVerified ||
+        currentUser.sessionVersion !== session.sessionVersion
+      ) {
+        return false;
+      }
+
+      const result = await tx.session.updateMany({
+        where: {
+          id: session.id,
+          refreshTokenHash: oldTokenHash,
+          sessionVersion: session.sessionVersion,
+          expiresAt: { gt: now },
+        },
+        data: {
+          refreshTokenHash: newTokenHash,
+          lastUsedAt: now,
+          expiresAt: newExpiresAt,
+        },
+      });
+
+      return result.count === 1;
+    });
+
+    if (!rotation) {
+      return res.status(401).json({
+        status: "error",
+        message: "Refresh token is no longer valid. Please log in again.",
+      });
+    }
+
+    // Issue a new 15-minute access token.
+    const accessToken = generateToken(
+      session.userId,
+      session.sessionVersion,
+      res,
+    );
+
+    return res.status(200).json({
+      status: "success",
+      message: "Token refreshed successfully",
+      token: accessToken,
+      refreshToken: newRefreshToken,
+    });
+  } catch (error) {
+    console.error("refreshAccessToken error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Unable to refresh session right now",
     });
   }
 };
@@ -440,7 +569,6 @@ const forgotPassword = async (req, res) => {
       where: { email: normalizedEmail },
     });
 
-    // Avoid revealing whether an email is registered.
     if (!user) {
       return res.status(404).json({
         status: "error",
@@ -593,11 +721,20 @@ const resetPassword = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.update({
+    await prisma.user.update({
       where: { email: normalizedEmail },
       data: {
         password: hashedPassword,
         sessionVersion: { increment: 1 },
+      },
+    });
+
+    // Delete all refresh-token sessions for this user.
+    await prisma.session.deleteMany({
+      where: {
+        user: {
+          email: normalizedEmail,
+        },
       },
     });
 
@@ -608,7 +745,6 @@ const resetPassword = async (req, res) => {
       },
     });
 
-    // Clear the cookie in this browser.
     clearAuthCookie(res);
 
     return res.status(200).json({
@@ -643,7 +779,6 @@ const updateProfile = async (req, res) => {
 
     const data = {};
 
-    // Update name
     if (name !== undefined) {
       if (typeof name !== "string" || !name.trim()) {
         return res.status(400).json({
@@ -655,7 +790,6 @@ const updateProfile = async (req, res) => {
       data.name = name.trim();
     }
 
-    // Update profile image URL
     if (profileImage !== undefined) {
       if (
         profileImage !== null &&
@@ -670,7 +804,6 @@ const updateProfile = async (req, res) => {
       data.profileImage = profileImage?.trim() ?? null;
     }
 
-    // Update grade
     if (grade !== undefined) {
       if (grade !== null && (typeof grade !== "string" || !grade.trim())) {
         return res.status(400).json({
@@ -682,7 +815,6 @@ const updateProfile = async (req, res) => {
       data.grade = grade?.trim() ?? null;
     }
 
-    // Update age
     if (age !== undefined) {
       if (age !== null) {
         const parsedAge =
@@ -760,6 +892,13 @@ const logoutUser = async (req, res) => {
       },
     });
 
+    // Delete all refresh-token sessions for this user.
+    await prisma.session.deleteMany({
+      where: {
+        userId: req.user.id,
+      },
+    });
+
     clearAuthCookie(res);
 
     return res.status(200).json({
@@ -780,6 +919,7 @@ export {
   registerUser,
   verifyOTP,
   loginUser,
+  refreshAccessToken,
   getProfile,
   forgotPassword,
   resetPassword,

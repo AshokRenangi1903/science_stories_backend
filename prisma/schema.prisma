@@ -206,8 +206,25 @@ model User {
 
   storyProgresses StoryProgress[]
   quizAttempts    QuizAttempt[]
+
+  sessions Session[]
 }
 
+model Session {
+  id               String   @id @default(uuid())
+  userId           String
+  refreshTokenHash String   @unique
+
+  sessionVersion   Int
+  expiresAt        DateTime
+  lastUsedAt       DateTime @default(now())
+  createdAt        DateTime @default(now())
+
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
 model EmailOTP {
   id        String    @id @default(uuid())
   email     String

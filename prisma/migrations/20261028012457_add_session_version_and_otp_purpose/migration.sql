@@ -1,4 +1,4 @@
-﻿/*
+/*
   Warnings:
 
   - Added the required column `purpose` to the `EmailOTP` table without a default value. This is not possible if the table is not empty.

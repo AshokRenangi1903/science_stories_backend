@@ -1,4 +1,4 @@
-﻿-- AlterTable
+-- AlterTable
 ALTER TABLE "Era" ALTER COLUMN "updatedAt" DROP DEFAULT;
 
 -- AlterTable
