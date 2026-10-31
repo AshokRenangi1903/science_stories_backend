@@ -1,6 +1,10 @@
 import nodemailer from "nodemailer";
 import "dotenv/config";
-import { otpTemplate, welcomeTemplate } from "../utils/mailTemplates.js";
+import {
+  otpTemplate,
+  welcomeTemplate,
+  welcomeTemplateSS,
+} from "../utils/mailTemplates.js";
 
 // Create a transporter using SMTP
 const transporter = nodemailer.createTransport({
@@ -40,7 +44,7 @@ const sendWelcomeEmail = async (name, email) => {
       to: email, // list of recipients
       subject: "Welcome to Science Stories", // subject line
       text: "This is a message from Science Stories ", // plain text body
-      html: welcomeTemplate(name),
+      html: welcomeTemplateSS(name),
     });
   } catch (error) {
     console.error("Error while sending mail:", error);
