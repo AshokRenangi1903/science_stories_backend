@@ -3,6 +3,7 @@ import "dotenv/config";
 import {
   otpTemplate,
   welcomeTemplate,
+  otpTemplateSS,
   welcomeTemplateSS,
 } from "../utils/mailTemplates.js";
 
@@ -26,7 +27,7 @@ const sendOTPEmail = async (name, email, otp, title, subtitle) => {
       to: email, // list of recipients
       subject: title, // subject line
       text: "This is a message from Science Stories ", // plain text body
-      html: otpTemplate(name, otp, title, subtitle),
+      html: otpTemplateSS(name, otp),
     });
   } catch (error) {
     console.error("Error while sending mail:", error);

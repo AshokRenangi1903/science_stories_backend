@@ -318,141 +318,1073 @@ const welcomeTemplate = (name) => `
 const welcomeTemplateSS = (name) => {
   const currentYear = new Date().getFullYear();
   const year = currentYear > 2026 ? `2026 - ${currentYear}` : "2026";
-  return `<!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="color-scheme" content="light only">
-<meta name="supported-color-schemes" content="light only">
-<title>Welcome to Science Stories</title>
-<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
-<style>
-  /* client resets */
-  body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
-  table,td{mso-table-lspace:0;mso-table-rspace:0}
-  img{-ms-interpolation-mode:bicubic;border:0;height:auto;line-height:100%;outline:none;text-decoration:none}
-  body{margin:0;padding:0;width:100%!important;height:100%!important;background:#e7ecf1}
-  a{color:#1a3a5c}
-  /* mobile */
-  @media only screen and (max-width:620px){
-    .container{width:100%!important}
-    .px{padding-left:24px!important;padding-right:24px!important}
-    .h1{font-size:26px!important;line-height:1.2!important}
-    .btn a{display:block!important}
-  }
-</style>
-</head>
-<body style="margin:0;padding:0;background:#e7ecf1;">
-<!-- preheader (hidden) -->
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;font-size:1px;line-height:1px;color:#e7ecf1;">
-  One question has a way of leading to the next. Come see where it goes.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
-</div>
+  return `<!doctype html>
+<html
+  lang="en"
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:v="urn:schemas-microsoft-com:vml"
+  xmlns:o="urn:schemas-microsoft-com:office:office"
+>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="color-scheme" content="light only" />
+    <meta name="supported-color-schemes" content="light only" />
+    <title>Welcome to Science Stories</title>
+    <!--[if mso
+      ]><noscript
+        ><xml
+          ><o:OfficeDocumentSettings
+            ><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings
+          ></xml
+        ></noscript
+      ><!
+    [endif]-->
+    <style>
+      /* client resets */
+      body,
+      table,
+      td,
+      a {
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+      }
+      table,
+      td {
+        mso-table-lspace: 0;
+        mso-table-rspace: 0;
+      }
+      img {
+        -ms-interpolation-mode: bicubic;
+        border: 0;
+        height: auto;
+        line-height: 100%;
+        outline: none;
+        text-decoration: none;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100% !important;
+        height: 100% !important;
+        background: #e7ecf1;
+      }
+      a {
+        color: #1a3a5c;
+      }
+      /* mobile */
+      @media only screen and (max-width: 620px) {
+        .container {
+          width: 100% !important;
+        }
+        .px {
+          padding-left: 24px !important;
+          padding-right: 24px !important;
+        }
+        .h1 {
+          font-size: 26px !important;
+          line-height: 1.2 !important;
+        }
+        .btn a {
+          display: block !important;
+        }
+      }
+    </style>
+  </head>
+  <body style="margin: 0; padding: 0; background: #e7ecf1">
+    <!-- preheader (hidden) -->
+    <div
+      style="
+        display: none;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        mso-hide: all;
+        font-size: 1px;
+        line-height: 1px;
+        color: #e7ecf1;
+      "
+    >
+      One question has a way of leading to the next. Come see where it
+      goes.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
+    </div>
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#e7ecf1;">
-<tr><td align="center" style="padding:26px 12px;">
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      style="background: #e7ecf1"
+    >
+      <tr>
+        <td align="center" style="padding: 26px 12px">
+          <table
+            role="presentation"
+            class="container"
+            width="600"
+            cellpadding="0"
+            cellspacing="0"
+            style="
+              width: 600px;
+              max-width: 600px;
+              background: #f5f0e8;
+              border-radius: 16px;
+              overflow: hidden;
+              box-shadow: 0 10px 30px rgba(12, 28, 48, 0.14);
+            "
+          >
+            <!-- HEADER -->
+            <tr>
+              <td
+                style="
+                  background: #15294c;
+                  border-bottom: 3px solid #b8872a;
+                  padding: 26px 36px 24px;
+                "
+                class="px"
+              >
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                >
+                  <tr>
+                    <td
+                      style="
+                        font-family:
+                          Georgia, &quot;Times New Roman&quot;, serif;
+                        color: #f4efe6;
+                        font-size: 22px;
+                        font-weight: bold;
+                        letter-spacing: 0.5px;
+                      "
+                    >
+                      Science&nbsp;Stories<span
+                        style="
+                          color: #e6c884;
+                          font-size: 12px;
+                          vertical-align: super;
+                        "
+                        >&trade;</span
+                      >
+                    </td>
+                    <td
+                      align="right"
+                      style="
+                        font-family: Georgia, serif;
+                        color: #e6c884;
+                        font-size: 11px;
+                        letter-spacing: 2px;
+                        text-transform: uppercase;
+                      "
+                    >
+                      Verified
+                    </td>
+                  </tr>
+                </table>
+                <div
+                  style="
+                    font-family: Georgia, serif;
+                    color: #aebccb;
+                    font-size: 13px;
+                    font-style: italic;
+                    margin-top: 6px;
+                  "
+                >
+                  Science, as connected stories, not isolated facts
+                </div>
+              </td>
+            </tr>
 
-  <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:#f5f0e8;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(12,28,48,.14);">
+            <!-- BODY -->
+            <tr>
+              <td class="px" style="padding: 34px 36px 8px">
+                <h1
+                  class="h1"
+                  style="
+                    margin: 0 0 6px;
+                    font-family: Georgia, &quot;Times New Roman&quot;, serif;
+                    font-size: 30px;
+                    line-height: 1.15;
+                    color: #15294c;
+                    font-weight: bold;
+                  "
+                >
+                  Welcome, ${name}
+                  <span style="font-weight: normal">&#128075;</span>
+                </h1>
+                <p
+                  style="
+                    margin: 0 0 6px;
+                    font-family: Georgia, serif;
+                    font-size: 16px;
+                    line-height: 1.65;
+                    color: #3d342a;
+                  "
+                >
+                  Your account is verified &mdash; you&rsquo;re all set. Your
+                  journey into the world of scientific discovery begins here.
+                </p>
+              </td>
+            </tr>
 
-    <!-- HEADER -->
-    <tr><td style="background:#15294c;border-bottom:3px solid #b8872a;padding:26px 36px 24px;" class="px">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-        <td style="font-family:Georgia,'Times New Roman',serif;color:#f4efe6;font-size:22px;font-weight:bold;letter-spacing:.5px;">
-          Science&nbsp;Stories<span style="color:#e6c884;font-size:12px;vertical-align:super;">&trade;</span>
+            <!-- FEATURE LIST -->
+            <tr>
+              <td class="px" style="padding: 0 36px 6px">
+                <p
+                  style="
+                    margin: 0 0 12px;
+                    font-family: Georgia, serif;
+                    font-size: 12px;
+                    letter-spacing: 2px;
+                    text-transform: uppercase;
+                    color: #b8872a;
+                    font-weight: bold;
+                  "
+                >
+                  What&rsquo;s waiting for you
+                </p>
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                >
+                  <!-- row -->
+                  <tr>
+                    <td width="34" valign="top" style="padding: 0 0 16px">
+                      <table
+                        role="presentation"
+                        cellpadding="0"
+                        cellspacing="0"
+                      >
+                        <tr>
+                          <td
+                            width="24"
+                            height="24"
+                            align="center"
+                            valign="middle"
+                            style="
+                              background: #b8872a;
+                              border-radius: 12px;
+                              font-family: Arial, sans-serif;
+                              font-size: 13px;
+                              color: #1a1410;
+                              font-weight: bold;
+                              line-height: 24px;
+                            "
+                          >
+                            &#10003;
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td
+                      valign="top"
+                      style="
+                        padding: 0 0 16px 12px;
+                        font-family: Georgia, serif;
+                        font-size: 15px;
+                        line-height: 1.55;
+                        color: #3d342a;
+                      "
+                    >
+                      <b style="color: #15294c"
+                        >Journey through six scientific eras</b
+                      >
+                      &mdash; follow a guided roadmap connecting scientists,
+                      discoveries and the evolution of ideas.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td width="34" valign="top" style="padding: 0 0 16px">
+                      <table
+                        role="presentation"
+                        cellpadding="0"
+                        cellspacing="0"
+                      >
+                        <tr>
+                          <td
+                            width="24"
+                            height="24"
+                            align="center"
+                            valign="middle"
+                            style="
+                              background: #b8872a;
+                              border-radius: 12px;
+                              font-family: Arial, sans-serif;
+                              font-size: 13px;
+                              color: #1a1410;
+                              font-weight: bold;
+                              line-height: 24px;
+                            "
+                          >
+                            &#10003;
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td
+                      valign="top"
+                      style="
+                        padding: 0 0 16px 12px;
+                        font-family: Georgia, serif;
+                        font-size: 15px;
+                        line-height: 1.55;
+                        color: #3d342a;
+                      "
+                    >
+                      <b style="color: #15294c"
+                        >Build a strong scientific foundation</b
+                      >
+                      &mdash; understand the fundamental concepts, principles
+                      and discoveries that shape our understanding of the world.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td width="34" valign="top" style="padding: 0 0 16px">
+                      <table
+                        role="presentation"
+                        cellpadding="0"
+                        cellspacing="0"
+                      >
+                        <tr>
+                          <td
+                            width="24"
+                            height="24"
+                            align="center"
+                            valign="middle"
+                            style="
+                              background: #b8872a;
+                              border-radius: 12px;
+                              font-family: Arial, sans-serif;
+                              font-size: 13px;
+                              color: #1a1410;
+                              font-weight: bold;
+                              line-height: 24px;
+                            "
+                          >
+                            &#10003;
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td
+                      valign="top"
+                      style="
+                        padding: 0 0 16px 12px;
+                        font-family: Georgia, serif;
+                        font-size: 15px;
+                        line-height: 1.55;
+                        color: #3d342a;
+                      "
+                    >
+                      <b style="color: #15294c"
+                        >Read or listen to every story</b
+                      >
+                      &mdash; explore at your own pace, with narration in a
+                      voice you choose.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td width="34" valign="top" style="padding: 0 0 16px">
+                      <table
+                        role="presentation"
+                        cellpadding="0"
+                        cellspacing="0"
+                      >
+                        <tr>
+                          <td
+                            width="24"
+                            height="24"
+                            align="center"
+                            valign="middle"
+                            style="
+                              background: #b8872a;
+                              border-radius: 12px;
+                              font-family: Arial, sans-serif;
+                              font-size: 13px;
+                              color: #1a1410;
+                              font-weight: bold;
+                              line-height: 24px;
+                            "
+                          >
+                            &#10003;
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td
+                      valign="top"
+                      style="
+                        padding: 0 0 16px 12px;
+                        font-family: Georgia, serif;
+                        font-size: 15px;
+                        line-height: 1.55;
+                        color: #3d342a;
+                      "
+                    >
+                      <b style="color: #15294c"
+                        >Explore, learn and test yourself</b
+                      >
+                      &mdash; challenge your understanding with quick quizzes
+                      and discover connections to school and exam topics.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td width="34" valign="top" style="padding: 0 0 2px">
+                      <table
+                        role="presentation"
+                        cellpadding="0"
+                        cellspacing="0"
+                      >
+                        <tr>
+                          <td
+                            width="24"
+                            height="24"
+                            align="center"
+                            valign="middle"
+                            style="
+                              background: #b8872a;
+                              border-radius: 12px;
+                              font-family: Arial, sans-serif;
+                              font-size: 13px;
+                              color: #1a1410;
+                              font-weight: bold;
+                              line-height: 24px;
+                            "
+                          >
+                            &#10003;
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td
+                      valign="top"
+                      style="
+                        padding: 0 0 2px 12px;
+                        font-family: Georgia, serif;
+                        font-size: 15px;
+                        line-height: 1.55;
+                        color: #3d342a;
+                      "
+                    >
+                      <b style="color: #15294c">Watch your knowledge grow</b>
+                      &mdash; track your progress as you travel through the map
+                      of scientific discovery.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- CALLOUT (no button) -->
+            <tr>
+              <td class="px" style="padding: 24px 36px 6px">
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  style="
+                    background: #f3e8cf;
+                    border: 1px solid #e3c98f;
+                    border-radius: 12px;
+                  "
+                >
+                  <tr>
+                    <td
+                      style="
+                        padding: 18px 22px;
+                        font-family: Georgia, serif;
+                        font-size: 16px;
+                        line-height: 1.65;
+                        color: #1a1410;
+                        text-align: center;
+                      "
+                    >
+                      <span style="color: #b8872a; font-weight: bold"
+                        >Start your journey today</span
+                      >
+                      by reading your first science story and completing its
+                      quiz.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- divider -->
+            <tr>
+              <td class="px" style="padding: 22px 36px 0">
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                >
+                  <tr>
+                    <td
+                      style="
+                        border-top: 1px solid #cabfae;
+                        font-size: 0;
+                        line-height: 0;
+                      "
+                    >
+                      &nbsp;
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="px" style="padding: 16px 36px 4px">
+                <p
+                  style="
+                    margin: 0 0 4px;
+                    font-family: Georgia, serif;
+                    font-size: 14px;
+                    line-height: 1.6;
+                    color: #3d342a;
+                  "
+                >
+                  Questions or need a hand? Reach us any time at
+                  <a
+                    href="mailto:support@sciencestories.in"
+                    style="
+                      color: #15294c;
+                      font-weight: bold;
+                      text-decoration: none;
+                    "
+                    >support@sciencestories.in</a
+                  >.
+                </p>
+                <p
+                  style="
+                    margin: 14px 0 2px;
+                    font-family: Georgia, serif;
+                    font-size: 15px;
+                    line-height: 1.6;
+                    color: #3d342a;
+                  "
+                >
+                  Happy exploring,
+                </p>
+                <p
+                  style="
+                    margin: 0;
+                    font-family: Georgia, serif;
+                    font-size: 15px;
+                    line-height: 1.5;
+                    color: #15294c;
+                    font-weight: bold;
+                  "
+                >
+                  The Science Stories<span
+                    style="
+                      font-size: 10px;
+                      vertical-align: super;
+                      color: #b8872a;
+                    "
+                    >&trade;</span
+                  >
+                  Team
+                </p>
+              </td>
+            </tr>
+
+            <!-- FOOTER -->
+            <tr>
+              <td style="background: #15294c; padding: 22px 36px" class="px">
+                <p
+                  style="
+                    margin: 0 0 8px;
+                    font-family: Georgia, serif;
+                    font-size: 11px;
+                    line-height: 1.6;
+                    color: #8ea4bb;
+                  "
+                >
+                  You&rsquo;re receiving this because you created a Science
+                  Stories account.
+                </p>
+                <p
+                  style="
+                    margin: 0 0 10px;
+                    font-family: Georgia, serif;
+                    font-size: 11px;
+                    line-height: 1.6;
+                    color: #8ea4bb;
+                  "
+                ></p>
+                <p
+                  style="
+                    margin: 0;
+                    font-family: Georgia, serif;
+                    font-size: 11px;
+                    line-height: 1.6;
+                    color: #6a7f96;
+                  "
+                >
+                  &copy; ${year} Science Voyage Studios LLP. All rights
+                  reserved.
+                </p>
+              </td>
+            </tr>
+          </table>
         </td>
-        <td align="right" style="font-family:Georgia,serif;color:#e6c884;font-size:11px;letter-spacing:2px;text-transform:uppercase;">Verified</td>
-      </tr></table>
-      <div style="font-family:Georgia,serif;color:#aebccb;font-size:13px;font-style:italic;margin-top:6px;">Science, told as one long story</div>
-    </td></tr>
-
-    <!-- BODY -->
-    <tr><td class="px" style="padding:34px 36px 8px;">
-      <h1 class="h1" style="margin:0 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:30px;line-height:1.15;color:#15294c;font-weight:bold;">
-        Welcome, ${name} <span style="font-weight:normal;">&#128075;</span>
-      </h1>
-      <p style="margin:0 0 20px;font-family:Georgia,serif;font-size:16px;line-height:1.65;color:#3d342a;">
-        Your account is verified and You're all set. Your journey into the world of scientific discovery begins here.
-      </p>
-      <p style="margin:0 0 22px;font-family:Georgia,serif;font-size:16px;line-height:1.7;color:#3d342a;">
-        Here&rsquo;s the idea: Science isn&rsquo;t a list of facts to memorise. It&rsquo;s one long story of human
-        <span style="color:#b8872a;">curiosity</span>, told the way it actually happened &mdash; one question leading to the next,
-        across six eras of discovery. From the first stargazers to the molecule of life, you&rsquo;ll follow how each
-        breakthrough opened the door to the one after it.
-      </p>
-    </td></tr>
-
-    <!-- FEATURE LIST -->
-    <tr><td class="px" style="padding:0 36px 6px;">
-      <p style="margin:0 0 12px;font-family:Georgia,serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#b8872a;font-weight:bold;">What&rsquo;s waiting for you</p>
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-        <!-- row -->
-        <tr><td width="34" valign="top" style="padding:0 0 14px;">
-          <table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="24" height="24" align="center" valign="middle" style="background:#b8872a;border-radius:12px;font-family:Arial,sans-serif;font-size:13px;color:#1a1410;font-weight:bold;line-height:24px;">&#10003;</td></tr></table>
-        </td><td valign="top" style="padding:0 0 14px 12px;font-family:Georgia,serif;font-size:15px;line-height:1.5;color:#3d342a;"><b style="color:#15294c;">Journey through six scientific eras  &mdash </b>  Follow a guided roadmap connecting scientists, discoveries and the evolution of ideas.</td></tr>
-         <table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="24" height="24" align="center" valign="middle" style="background:#b8872a;border-radius:12px;font-family:Arial,sans-serif;font-size:13px;color:#1a1410;font-weight:bold;line-height:24px;">&#10003;</td></tr></table>
-        </td><td valign="top" style="padding:0 0 14px 12px;font-family:Georgia,serif;font-size:15px;line-height:1.5;color:#3d342a;"><b style="color:#15294c;">Build a strong scientific foundation  &mdash </b> Understand the fundamental concepts, principles and discoveries that shape our understanding of the world.</td></tr>
-        <tr><td width="34" valign="top" style="padding:0 0 14px;">
-          <table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="24" height="24" align="center" valign="middle" style="background:#b8872a;border-radius:12px;font-family:Arial,sans-serif;font-size:13px;color:#1a1410;font-weight:bold;line-height:24px;">&#10003;</td></tr></table>
-        </td><td valign="top" style="padding:0 0 14px 12px;font-family:Georgia,serif;font-size:15px;line-height:1.5;color:#3d342a;"><b style="color:#15294c;">Read every story &mdash; or listen</b>, in a voice you choose at your own pace.</td></tr>
-        <tr><td width="34" valign="top" style="padding:0 0 14px;">
-          <table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="24" height="24" align="center" valign="middle" style="background:#b8872a;border-radius:12px;font-family:Arial,sans-serif;font-size:13px;color:#1a1410;font-weight:bold;line-height:24px;">&#10003;</td></tr></table>
-        </td><td valign="top" style="padding:0 0 14px 12px;font-family:Georgia,serif;font-size:15px;line-height:1.5;color:#3d342a;"><b style="color:#15294c;">Explore, learn and test yourself</b> Challenge your understanding with quick quizzes and discover connections to your exam topics.</td></tr>
-        <tr><td width="34" valign="top" style="padding:0 0 4px;">
-          <table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="24" height="24" align="center" valign="middle" style="background:#b8872a;border-radius:12px;font-family:Arial,sans-serif;font-size:13px;color:#1a1410;font-weight:bold;line-height:24px;">&#10003;</td></tr></table>
-        </td><td valign="top" style="padding:0 0 4px 12px;font-family:Georgia,serif;font-size:15px;line-height:1.5;color:#3d342a;"><b style="color:#15294c;">Watch your progress grow</b> as the map of knowledge fills in</td></tr>
-         <tr><td width="34" valign="top" style="padding:0 0 4px;">
-          <table role="presentation" cellpadding="0" cellspacing="0"><tr><td width="24" height="24" align="center" valign="middle" style="background:#b8872a;border-radius:12px;font-family:Arial,sans-serif;font-size:13px;color:#1a1410;font-weight:bold;line-height:24px;">&#10003;</td></tr></table>
-        </td><td valign="top" style="padding:0 0 4px 12px;font-family:Georgia,serif;font-size:15px;line-height:1.5;color:#3d342a;"><b style="color:#15294c;">Build a strong scientific foundation</td></tr>
-         
-        </table>
-    </td></tr>
-
-    <!-- CTA -->
-    <tr><td class="px" align="center" style="padding:26px 36px 8px;">
-      <table role="presentation" class="btn" cellpadding="0" cellspacing="0"><tr>
-        <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{cta_url}}" style="height:52px;v-text-anchor:middle;width:300px;" arcsize="20%" strokecolor="#b8872a" fillcolor="#b8872a"><w:anchorlock/><center style="color:#1a1410;font-family:Georgia,serif;font-size:17px;font-weight:bold;">Start your first story &rarr;</center></v:roundrect><![endif]-->
-        <!--[if !mso]><!-- -->
-        <td align="center" bgcolor="#b8872a" style="border-radius:11px;">
-          <a href="{{cta_url}}" style="display:inline-block;padding:15px 34px;font-family:Georgia,serif;font-size:17px;font-weight:bold;color:#1a1410;text-decoration:none;border-radius:11px;">Start your first story &rarr;</a>
-        </td>
-        <!--<![endif]-->
-      </tr></table>
-    </td></tr>
-
-
-    <!-- divider -->
-    <tr><td class="px" style="padding:22px 36px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="border-top:1px solid #cabfae;font-size:0;line-height:0;">&nbsp;</td></tr></table></td></tr>
-
-    <tr><td class="px" style="padding:16px 36px 4px;">
-      <p style="margin:0 0 4px;font-family:Georgia,serif;font-size:14px;line-height:1.6;color:#3d342a;">
-        Questions or need a hand? Reach us any time at
-        <a href="mailto:{{support_email}}" style="color:#15294c;font-weight:bold;text-decoration:none;">{{support_email}}</a>.
-      </p>
-      <p style="margin:14px 0 2px;font-family:Georgia,serif;font-size:15px;line-height:1.6;color:#3d342a;">Happy exploring,</p>
-      <p style="margin:0 0 2px;font-family:Georgia,serif;font-size:15px;line-height:1.5;color:#15294c;font-weight:bold;">The Science Stories Team</p>
-      <p style="margin:0;font-family:Georgia,serif;font-size:13px;line-height:1.5;color:#7a6e65;">Science Voyage Studios LLP</p>
-    </td></tr>
-
-    <!-- FOOTER -->
-    <tr><td style="background:#15294c;padding:22px 36px;" class="px">
-      <p style="margin:0 0 8px;font-family:Georgia,serif;font-size:11px;line-height:1.6;color:#8ea4bb;">
-        You&rsquo;re receiving this because you created a Science Stories account.
-      </p>
-      
-      <p style="margin:0;font-family:Georgia,serif;font-size:11px;line-height:1.6;color:#6a7f96;">
-         
-        &copy; ${year} Science Voyage Studios LLP. All rights reserved.
-      </p>
-    </td></tr>
-
-  </table>
-
-</td></tr>
-</table>
-</body>
+      </tr>
+    </table>
+  </body>
 </html>
 `;
 };
 
-export { otpTemplate, welcomeTemplate, welcomeTemplateSS };
+const otpTemplateSS = (name, otp) => {
+  const currentYear = new Date().getFullYear();
+  const year = currentYear > 2026 ? `2026 - ${currentYear}` : "2026";
+  return `<!doctype html>
+<html
+  lang="en"
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:v="urn:schemas-microsoft-com:vml"
+  xmlns:o="urn:schemas-microsoft-com:office:office"
+>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="color-scheme" content="light only" />
+    <meta name="supported-color-schemes" content="light only" />
+    <title>Verify your email — Science Stories</title>
+    <!--[if mso
+      ]><noscript
+        ><xml
+          ><o:OfficeDocumentSettings
+            ><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings
+          ></xml
+        ></noscript
+      ><!
+    [endif]-->
+    <style>
+      body,
+      table,
+      td,
+      a {
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+      }
+      table,
+      td {
+        mso-table-lspace: 0;
+        mso-table-rspace: 0;
+      }
+      img {
+        -ms-interpolation-mode: bicubic;
+        border: 0;
+        height: auto;
+        line-height: 100%;
+        outline: none;
+        text-decoration: none;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100% !important;
+        height: 100% !important;
+        background: #e7ecf1;
+      }
+      a {
+        color: #1a3a5c;
+      }
+      @media only screen and (max-width: 620px) {
+        .container {
+          width: 100% !important;
+        }
+        .px {
+          padding-left: 24px !important;
+          padding-right: 24px !important;
+        }
+        .otp {
+          font-size: 34px !important;
+          letter-spacing: 10px !important;
+        }
+      }
+    </style>
+  </head>
+  <body style="margin: 0; padding: 0; background: #e7ecf1">
+    <!-- preheader (hidden) -->
+    <div
+      style="
+        display: none;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        mso-hide: all;
+        font-size: 1px;
+        line-height: 1px;
+        color: #e7ecf1;
+      "
+    >
+      Your Science Stories verification code is ${otp} — it expires in 5
+      minutes.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
+    </div>
+
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      style="background: #e7ecf1"
+    >
+      <tr>
+        <td align="center" style="padding: 26px 12px">
+          <table
+            role="presentation"
+            class="container"
+            width="600"
+            cellpadding="0"
+            cellspacing="0"
+            style="
+              width: 600px;
+              max-width: 600px;
+              background: #f5f0e8;
+              border-radius: 16px;
+              overflow: hidden;
+              box-shadow: 0 10px 30px rgba(12, 28, 48, 0.14);
+            "
+          >
+            <!-- HEADER -->
+            <tr>
+              <td
+                style="
+                  background: #15294c;
+                  border-bottom: 3px solid #b8872a;
+                  padding: 26px 36px 24px;
+                "
+                class="px"
+              >
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                >
+                  <tr>
+                    <td
+                      style="
+                        font-family:
+                          Georgia, &quot;Times New Roman&quot;, serif;
+                        color: #f4efe6;
+                        font-size: 22px;
+                        font-weight: bold;
+                        letter-spacing: 0.5px;
+                      "
+                    >
+                      Science&nbsp;Stories<span
+                        style="
+                          color: #e6c884;
+                          font-size: 12px;
+                          vertical-align: super;
+                        "
+                        >&trade;</span
+                      >
+                    </td>
+                    <td
+                      align="right"
+                      style="
+                        font-family: Georgia, serif;
+                        color: #e6c884;
+                        font-size: 11px;
+                        letter-spacing: 2px;
+                        text-transform: uppercase;
+                      "
+                    >
+                      Verify Email
+                    </td>
+                  </tr>
+                </table>
+                <div
+                  style="
+                    font-family: Georgia, serif;
+                    color: #aebccb;
+                    font-size: 13px;
+                    font-style: italic;
+                    margin-top: 6px;
+                  "
+                >
+                  Complete your registration
+                </div>
+              </td>
+            </tr>
+
+            <!-- BODY -->
+            <tr>
+              <td class="px" style="padding: 34px 36px 6px">
+                <h1
+                  style="
+                    margin: 0 0 6px;
+                    font-family: Georgia, &quot;Times New Roman&quot;, serif;
+                    font-size: 26px;
+                    line-height: 1.2;
+                    color: #15294c;
+                    font-weight: bold;
+                  "
+                >
+                  Hello, ${name}
+                  <span style="font-weight: normal">&#128075;</span>
+                </h1>
+                <p
+                  style="
+                    margin: 0 0 6px;
+                    font-family: Georgia, serif;
+                    font-size: 16px;
+                    line-height: 1.65;
+                    color: #3d342a;
+                  "
+                >
+                  Welcome aboard. Enter the code below to verify your email and
+                  finish creating your account.
+                </p>
+              </td>
+            </tr>
+
+            <!-- OTP CODE BLOCK -->
+            <tr>
+              <td class="px" align="center" style="padding: 14px 36px 6px">
+                <table
+                  role="presentation"
+                  cellpadding="0"
+                  cellspacing="0"
+                  style="
+                    background: #fbf8f1;
+                    border: 1.5px solid #d6a646;
+                    border-radius: 14px;
+                  "
+                >
+                  <tr>
+                    <td
+                      align="center"
+                      style="
+                        padding: 20px 34px 8px;
+                        font-family: Georgia, serif;
+                        font-size: 11px;
+                        letter-spacing: 2px;
+                        text-transform: uppercase;
+                        color: #b8872a;
+                        font-weight: bold;
+                      "
+                    >
+                      Your verification code
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      align="center"
+                      class="otp"
+                      style="
+                        padding: 0 34px 20px;
+                        font-family:
+                          &quot;Courier New&quot;, Courier, monospace;
+                        font-size: 42px;
+                        line-height: 1;
+                        letter-spacing: 14px;
+                        font-weight: bold;
+                        color: #15294c;
+                      "
+                    >
+                      ${otp}
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="px" align="center" style="padding: 12px 44px 2px">
+                <p
+                  style="
+                    margin: 0;
+                    font-family: Georgia, serif;
+                    font-size: 14px;
+                    line-height: 1.6;
+                    color: #b45309;
+                    font-weight: bold;
+                  "
+                >
+                  This code expires in 5 minutes.
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="px" style="padding: 14px 40px 2px">
+                <p
+                  style="
+                    margin: 0 0 8px;
+                    font-family: Georgia, serif;
+                    font-size: 14px;
+                    line-height: 1.6;
+                    color: #7a6e65;
+                    text-align: center;
+                  "
+                >
+                  For your security, never share this code with anyone &mdash;
+                  our team will never ask you for it.
+                </p>
+                <p
+                  style="
+                    margin: 0;
+                    font-family: Georgia, serif;
+                    font-size: 14px;
+                    line-height: 1.6;
+                    color: #7a6e65;
+                    text-align: center;
+                  "
+                >
+                  Didn&rsquo;t request this? You can safely ignore this email.
+                </p>
+              </td>
+            </tr>
+
+            <!-- divider -->
+            <tr>
+              <td class="px" style="padding: 22px 36px 0">
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                >
+                  <tr>
+                    <td
+                      style="
+                        border-top: 1px solid #cabfae;
+                        font-size: 0;
+                        line-height: 0;
+                      "
+                    >
+                      &nbsp;
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="px" style="padding: 16px 36px 4px">
+                <p
+                  style="
+                    margin: 0 0 4px;
+                    font-family: Georgia, serif;
+                    font-size: 14px;
+                    line-height: 1.6;
+                    color: #3d342a;
+                  "
+                >
+                  Need a hand? Reach us any time at
+                  <a
+                    href="mailto:support@sciencestories.in"
+                    style="
+                      color: #15294c;
+                      font-weight: bold;
+                      text-decoration: none;
+                    "
+                    >support@sciencestories.in</a
+                  >.
+                </p>
+                <p
+                  style="
+                    margin: 14px 0 2px;
+                    font-family: Georgia, serif;
+                    font-size: 15px;
+                    line-height: 1.6;
+                    color: #3d342a;
+                  "
+                >
+                  Happy exploring,
+                </p>
+                <p
+                  style="
+                    margin: 0 0 2px;
+                    font-family: Georgia, serif;
+                    font-size: 15px;
+                    line-height: 1.5;
+                    color: #15294c;
+                    font-weight: bold;
+                  "
+                >
+                  The Science Stories<span
+                    style="
+                      font-size: 10px;
+                      vertical-align: super;
+                      color: #b8872a;
+                    "
+                    >&trade;</span
+                  >
+                  Team
+                </p>
+                <p
+                  style="
+                    margin: 0;
+                    font-family: Georgia, serif;
+                    font-size: 13px;
+                    line-height: 1.5;
+                    color: #7a6e65;
+                  "
+                >
+                  Science Voyage Studios LLP
+                </p>
+              </td>
+            </tr>
+
+            <!-- FOOTER -->
+            <tr>
+              <td style="background: #15294c; padding: 22px 36px" class="px">
+                <p
+                  style="
+                    margin: 0 0 8px;
+                    font-family: Georgia, serif;
+                    font-size: 11px;
+                    line-height: 1.6;
+                    color: #8ea4bb;
+                  "
+                >
+                  This is an automated security message for your Science Stories
+                  account.
+                </p>
+                <p
+                  style="
+                    margin: 0 0 10px;
+                    font-family: Georgia, serif;
+                    font-size: 11px;
+                    line-height: 1.6;
+                    color: #8ea4bb;
+                  "
+                ></p>
+                <p
+                  style="
+                    margin: 0;
+                    font-family: Georgia, serif;
+                    font-size: 11px;
+                    line-height: 1.6;
+                    color: #6a7f96;
+                  "
+                >
+                  &copy; ${year} Science Voyage Studios LLP. All rights
+                  reserved.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+`;
+};
+export { otpTemplate, welcomeTemplate, welcomeTemplateSS, otpTemplateSS };
