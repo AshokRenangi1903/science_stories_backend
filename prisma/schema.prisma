@@ -42,7 +42,7 @@ model Story {
   isPublished   Boolean  @default(false)
 
   discipline  String?
-  subject     String?
+  subject Subject?
   geolocation String?
 
   estimatedReadTime String?
@@ -57,6 +57,17 @@ model Story {
   storyProgresses StoryProgress[]
 }
 
+enum Subject {
+  PHYSICS               @map("Physics")
+  CHEMISTRY             @map("Chemistry")
+  BIOLOGY               @map("Biology")
+  MEDICINE               @map("Medicine")
+  ASTRONOMY_SPACE        @map("Astronomy & Space")
+  EARTH_ENVIRONMENT      @map("Earth & Environment")
+  MATHEMATICS            @map("Mathematics")
+  COMPUTER_SCIENCE       @map("Computer Science")
+  MATERIALS_TECHNOLOGY   @map("Materials & Technology")
+}
 
 model StoryBlock {
   id        String      @id @default(uuid())
