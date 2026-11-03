@@ -405,6 +405,8 @@ const googleLogin = async (req, res) => {
     // Verify the token directly with Google.
     const googleUser = await verifyGoogleIdToken(idToken);
 
+    let isNewUser = false;
+
     // First check whether this Google account is already linked.
     let user = await prisma.user.findUnique({
       where: { googleId: googleUser.googleId },
@@ -462,6 +464,8 @@ const googleLogin = async (req, res) => {
             role: "STUDENT",
           },
         });
+
+        isNewUser = true;
       }
     }
 
@@ -490,6 +494,15 @@ const googleLogin = async (req, res) => {
     const refreshToken = await createUserSession(user.id, user.sessionVersion);
 
     const token = generateToken(user.id, user.sessionVersion, res);
+
+    // Send welcome email only for newly created Google accounts.
+    if (isNewUser) {
+      try {
+        await sendWelcomeEmail(user.name, user.email);
+      } catch (emailError) {
+        console.error("Google welcome email failed:", emailError.message);
+      }
+    }
 
     const { password: _password, ...safeUser } = user;
 
