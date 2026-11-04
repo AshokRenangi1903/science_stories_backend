@@ -18,7 +18,7 @@ function collectStrings(value, result = []) {
   return result;
 }
 
-//  Get All Scientists and Image URLs
+// Get All Unique Scientists and Image URLs
 const getAllScientists = async (req, res) => {
   try {
     const scientistBlocks = await prisma.storyBlock.findMany({
@@ -28,7 +28,9 @@ const getAllScientists = async (req, res) => {
         //   isPublished: true,
         // },
       },
-
+      select: {
+        content: true,
+      },
       orderBy: {
         createdAt: "asc",
       },
@@ -52,34 +54,23 @@ const getAllScientists = async (req, res) => {
 
       const key = name.toLowerCase();
 
+      const imageUrl =
+        typeof content.imageUrl === "string"
+          ? content.imageUrl.trim() || null
+          : null;
+
       if (!scientistsMap.has(key)) {
         scientistsMap.set(key, {
           name,
-          imageUrl:
-            typeof content.imageUrl === "string"
-              ? content.imageUrl.trim() || null
-              : null,
+          imageUrl,
         });
-      }
+      } else {
+        const scientist = scientistsMap.get(key);
 
-      const scientist = scientistsMap.get(key);
-
-      // Keep the first available image URL.
-      if (
-        !scientist.imageUrl &&
-        typeof content.imageUrl === "string" &&
-        content.imageUrl.trim()
-      ) {
-        scientist.imageUrl = content.imageUrl.trim();
-      }
-
-      // Avoid adding the same story twice for one scientist.
-      const alreadyAdded = scientist.stories.some(
-        (story) => story.id === block.story.id,
-      );
-
-      if (!alreadyAdded) {
-        scientist.stories.push(block.story);
+        // Use the first available image URL.
+        if (!scientist.imageUrl && imageUrl) {
+          scientist.imageUrl = imageUrl;
+        }
       }
     }
 
