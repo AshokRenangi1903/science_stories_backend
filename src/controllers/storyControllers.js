@@ -104,6 +104,7 @@ const createStory = async (req, res) => {
       isPublished,
       discipline,
       subject,
+      keywords,
       geolocation,
       estimatedReadTime,
     } = req.body;
@@ -139,6 +140,7 @@ const createStory = async (req, res) => {
         position: lastStory ? lastStory.position + 1 : 1,
         isPopular,
         isPublished,
+        keywords,
         discipline,
         subject,
         geolocation,
@@ -301,6 +303,9 @@ const updateStory = async (req, res) => {
     if (description !== undefined) updateData.description = description;
     if (scientistNames !== undefined) {
       updateData.scientistNames = scientistNames;
+    }
+    if (keywords !== undefined) {
+      updateData.keywords = keywords;
     }
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
     if (position !== undefined) updateData.position = position;
