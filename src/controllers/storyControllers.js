@@ -18,6 +18,88 @@ function collectStrings(value, result = []) {
   return result;
 }
 
+//  Get All Scientists and Image URLs
+const getAllScientists = async (req, res) => {
+  try {
+    const scientistBlocks = await prisma.storyBlock.findMany({
+      where: {
+        type: "SCIENTIST_CARD",
+        // story: {
+        //   isPublished: true,
+        // },
+      },
+
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+    const scientistsMap = new Map();
+
+    for (const block of scientistBlocks) {
+      const content = block.content;
+
+      if (!content || typeof content !== "object" || Array.isArray(content)) {
+        continue;
+      }
+
+      const name =
+        typeof content.scientistName === "string"
+          ? content.scientistName.trim()
+          : "";
+
+      if (!name) continue;
+
+      const key = name.toLowerCase();
+
+      if (!scientistsMap.has(key)) {
+        scientistsMap.set(key, {
+          name,
+          imageUrl:
+            typeof content.imageUrl === "string"
+              ? content.imageUrl.trim() || null
+              : null,
+        });
+      }
+
+      const scientist = scientistsMap.get(key);
+
+      // Keep the first available image URL.
+      if (
+        !scientist.imageUrl &&
+        typeof content.imageUrl === "string" &&
+        content.imageUrl.trim()
+      ) {
+        scientist.imageUrl = content.imageUrl.trim();
+      }
+
+      // Avoid adding the same story twice for one scientist.
+      const alreadyAdded = scientist.stories.some(
+        (story) => story.id === block.story.id,
+      );
+
+      if (!alreadyAdded) {
+        scientist.stories.push(block.story);
+      }
+    }
+
+    const scientists = Array.from(scientistsMap.values());
+
+    return res.status(200).json({
+      status: "success",
+      message: "Scientists retrieved successfully",
+      data: scientists,
+    });
+  } catch (error) {
+    console.error("Get all scientists error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: error.message,
+    });
+  }
+};
+
 // Creating a new Story in an Era
 const createStory = async (req, res) => {
   try {
@@ -417,4 +499,5 @@ export {
   deleteStory,
   getAllStories,
   reorderStories,
+  getAllScientists,
 };

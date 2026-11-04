@@ -9,11 +9,15 @@ import {
   getStory,
   getAllStories,
   updateStory,
+  getAllScientists,
   reorderStories,
 } from "../controllers/storyControllers.js";
 import { CreatorRoles } from "../utils/roles.js";
 
 const router = express.Router();
+
+// Get All Scientists
+router.get("/getScientists", getAllScientists);
 
 // Get all stories from an Era
 router.get("/:eraId/getEraStories", getEraStories);
