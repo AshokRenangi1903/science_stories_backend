@@ -277,6 +277,7 @@ const updateStory = async (req, res) => {
       position,
       isPopular,
       isPublished,
+      keywords,
       discipline,
       subject,
       geolocation,
