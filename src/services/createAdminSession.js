@@ -1,5 +1,5 @@
 import { prisma } from "../config/db.js";
-import { generateRefreshToken } from "./generateRefreshToken.js";
+import { generateRefreshToken } from "../utils/generateRefreshToken.js";
 
 const createAdminSession = async (adminId, sessionVersion) => {
   const { refreshToken, refreshTokenHash } = generateRefreshToken();
