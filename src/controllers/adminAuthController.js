@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 
 import { generateToken } from "../utils/generateToken.js";
 import { generateRefreshToken } from "../utils/generateRefreshToken.js";
-import { createAdminSession } from "../utils/createAdminSession.js";
+import { createAdminSession } from "../services/createAdminSession.js";
 
 const normalizeEmail = (email) =>
   typeof email === "string" ? email.trim().toLowerCase() : "";
