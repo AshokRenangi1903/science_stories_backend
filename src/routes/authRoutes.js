@@ -13,16 +13,12 @@ import { AdminRoles } from "../utils/roles.js";
 
 const router = express.Router();
 
-// Admin login
 router.post("/adminLogin", adminLogin);
 
-// Refresh access token
 router.post("/refresh", refreshAdminAccessToken);
 
-// Get current admin
 router.get("/me", authMiddleware, allowRoles(...AdminRoles), getCurrentAdmin);
 
-// Admin logout
 router.post("/adminLogout", adminLogout);
 
 export default router;

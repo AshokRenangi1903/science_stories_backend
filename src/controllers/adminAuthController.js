@@ -2,23 +2,34 @@ import { prisma } from "../config/db.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
-import jwt from "jsonwebtoken";
-
 import { generateToken } from "../utils/generateToken.js";
 import { generateRefreshToken } from "../utils/generateRefreshToken.js";
-import { createAdminSession } from "../services/createAdminSession.js";
+import { createAdminSession } from "../utils/createAdminSession.js";
+
+const REFRESH_COOKIE = "ssrefresh";
+const REFRESH_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  path: "/",
+};
+
+const setRefreshCookie = (res, token) => {
+  res.cookie(REFRESH_COOKIE, token, {
+    ...cookieOptions,
+    maxAge: REFRESH_MAX_AGE,
+  });
+};
+
+const clearAuthCookies = (res) => {
+  res.clearCookie("ssjwt", cookieOptions);
+  res.clearCookie(REFRESH_COOKIE, cookieOptions);
+};
 
 const normalizeEmail = (email) =>
   typeof email === "string" ? email.trim().toLowerCase() : "";
-
-const clearAuthCookie = (res) => {
-  res.clearCookie("ssjwt", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    path: "/",
-  });
-};
 
 // Admin Login
 const adminLogin = async (req, res) => {
@@ -58,14 +69,17 @@ const adminLogin = async (req, res) => {
       });
     }
 
-    // Do not increment sessionVersion here.
-    // Existing admin devices must remain logged in.
+    // Create a separate session without deleting other devices' sessions.
     const refreshToken = await createAdminSession(
       admin.id,
       admin.sessionVersion,
     );
 
-    const token = generateToken(admin.id, admin.sessionVersion, res);
+    // Sets the 15-minute ssjwt HttpOnly cookie.
+    generateToken(admin.id, admin.sessionVersion, res);
+
+    // Sets the 7-day ssrefresh HttpOnly cookie.
+    setRefreshCookie(res, refreshToken);
 
     const safeAdmin = {
       id: admin.id,
@@ -80,11 +94,7 @@ const adminLogin = async (req, res) => {
     return res.status(200).json({
       status: "success",
       message: "Admin logged in successfully!",
-      data: {
-        admin: safeAdmin,
-      },
-      token,
-      refreshToken,
+      data: { admin: safeAdmin },
     });
   } catch (error) {
     console.error("Admin login error:", error);
@@ -137,12 +147,12 @@ const getCurrentAdmin = async (req, res) => {
 // Refresh Admin Access Token
 const refreshAdminAccessToken = async (req, res) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies?.[REFRESH_COOKIE];
 
-    if (!refreshToken || typeof refreshToken !== "string") {
+    if (!refreshToken) {
       return res.status(401).json({
         status: "error",
-        message: "Refresh token is required.",
+        message: "Refresh session not found. Please log in again.",
       });
     }
 
@@ -164,9 +174,11 @@ const refreshAdminAccessToken = async (req, res) => {
       !session.user.isVerified ||
       session.sessionVersion !== session.user.sessionVersion
     ) {
+      clearAuthCookies(res);
+
       return res.status(401).json({
         status: "error",
-        message: "Invalid or expired admin session. Please log in again.",
+        message: "Invalid or expired admin session.",
       });
     }
 
@@ -175,9 +187,9 @@ const refreshAdminAccessToken = async (req, res) => {
       refreshTokenHash: newRefreshTokenHash,
     } = generateRefreshToken();
 
-    const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const newExpiresAt = new Date(Date.now() + REFRESH_MAX_AGE);
 
-    // Rotate the refresh token atomically.
+    // Atomically rotate only this browser's refresh session.2
     const rotated = await prisma.$transaction(async (tx) => {
       const currentAdmin = await tx.user.findUnique({
         where: { id: session.userId },
@@ -211,24 +223,28 @@ const refreshAdminAccessToken = async (req, res) => {
     });
 
     if (!rotated) {
+      clearAuthCookies(res);
+
       return res.status(401).json({
         status: "error",
-        message: "Session expired. Please log in again.",
+        message: "Admin session expired. Please log in again.",
       });
     }
 
-    const token = generateToken(session.userId, session.sessionVersion, res);
+    // Issue a new 15-minute access cookie.
+    generateToken(session.userId, session.sessionVersion, res);
+
+    // Replace the old 7-day refresh cookie.
+    setRefreshCookie(res, newRefreshToken);
 
     return res.status(200).json({
       status: "success",
-      message: "Admin token refreshed successfully.",
-      token,
-      refreshToken: newRefreshToken,
+      message: "Admin session refreshed successfully.",
     });
   } catch (error) {
     console.error("Admin refresh error:", error);
 
-    return res.status(401).json({
+    return res.status(500).json({
       status: "error",
       message: "Unable to refresh admin session.",
     });
@@ -238,27 +254,21 @@ const refreshAdminAccessToken = async (req, res) => {
 // Admin Logout
 const adminLogout = async (req, res) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies?.[REFRESH_COOKIE];
 
-    if (!refreshToken || typeof refreshToken !== "string") {
-      return res.status(400).json({
-        status: "error",
-        message: "Refresh token is required for logout.",
+    if (refreshToken) {
+      const refreshTokenHash = crypto
+        .createHash("sha256")
+        .update(refreshToken)
+        .digest("hex");
+
+      // Revoke only this browser's session.
+      await prisma.session.deleteMany({
+        where: { refreshTokenHash },
       });
     }
 
-    const refreshTokenHash = crypto
-      .createHash("sha256")
-      .update(refreshToken)
-      .digest("hex");
-
-    // Delete only this device's session.
-    // Other admin devices remain logged in.
-    await prisma.session.deleteMany({
-      where: { refreshTokenHash },
-    });
-
-    clearAuthCookie(res);
+    clearAuthCookies(res);
 
     return res.status(200).json({
       status: "success",
