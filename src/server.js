@@ -56,7 +56,7 @@ app.use("/api/tts", ttsRoutes);
 app.use("/api/uploads", imageUploadRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboardAnalytics", dashboardAnalyticsRoutes);
-app.use("/api/eras", eraRoutes);
+app.use("/api/eras", eraRoutes);  
 app.use("/api/stories", storyRoutes);
 app.use("/api/storyBlocks", storyBlockRoutes);
 app.use("/api/quiz", quizRoutes);

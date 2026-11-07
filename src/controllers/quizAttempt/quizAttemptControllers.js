@@ -117,9 +117,7 @@ const revealAnswer = async (req, res) => {
       });
     }
 
-    const correctOption = question.options.find(
-      (option) => option.isCorrect,
-    );
+    const correctOption = question.options.find((option) => option.isCorrect);
 
     if (!correctOption) {
       return res.status(500).json({
@@ -167,10 +165,7 @@ const submitQuiz = async (req, res) => {
       });
     }
 
-    if (
-      !Number.isInteger(timeTaken) ||
-      timeTaken < 0
-    ) {
+    if (!Number.isInteger(timeTaken) || timeTaken < 0) {
       return res.status(400).json({
         status: "error",
         message: "Valid time taken is required",
@@ -212,14 +207,9 @@ const submitQuiz = async (req, res) => {
     }
 
     // Reject duplicate question answers
-    const submittedQuestionIds = answers.map(
-      (answer) => answer.questionId,
-    );
+    const submittedQuestionIds = answers.map((answer) => answer.questionId);
 
-    if (
-      new Set(submittedQuestionIds).size !==
-      submittedQuestionIds.length
-    ) {
+    if (new Set(submittedQuestionIds).size !== submittedQuestionIds.length) {
       return res.status(400).json({
         status: "error",
         message: "Duplicate question answers are not allowed",
@@ -227,10 +217,7 @@ const submitQuiz = async (req, res) => {
     }
 
     const questionMap = new Map(
-      questions.map((question) => [
-        question.id,
-        question,
-      ]),
+      questions.map((question) => [question.id, question]),
     );
 
     let correctCount = 0;
@@ -267,9 +254,7 @@ const submitQuiz = async (req, res) => {
         });
       }
 
-      const correctOption = question.options.find(
-        (option) => option.isCorrect,
-      );
+      const correctOption = question.options.find((option) => option.isCorrect);
 
       if (!correctOption) {
         return res.status(500).json({
@@ -295,15 +280,11 @@ const submitQuiz = async (req, res) => {
     const totalQuestions = questions.length;
     const score = correctCount * quiz.marksPerQuestion;
 
-    const accuracy = Number(
-      ((correctCount / totalQuestions) * 100).toFixed(2),
-    );
+    const accuracy = Number(((correctCount / totalQuestions) * 100).toFixed(2));
 
     const completedAt = new Date();
 
-    const startedAt = new Date(
-      completedAt.getTime() - timeTaken * 1000,
-    );
+    const startedAt = new Date(completedAt.getTime() - timeTaken * 1000);
 
     // Save attempt, question attempts and progress atomically
     const result = await prisma.$transaction(async (tx) => {
@@ -486,9 +467,203 @@ const getQuizReview = async (req, res) => {
   }
 };
 
+// 5. Get all completed quiz attempts for a story
+const getQuizAttemptHistory = async (req, res) => {
+  try {
+    const { storyId } = req.params;
+    const userId = req.user.id;
+
+    if (!storyId) {
+      return res.status(400).json({
+        status: "error",
+        message: "Story ID is required",
+      });
+    }
+
+    const attempts = await prisma.quizAttempt.findMany({
+      where: {
+        userId,
+        status: "COMPLETED",
+        quiz: {
+          storyId,
+        },
+      },
+      orderBy: [{ completedAt: "asc" }, { createdAt: "asc" }],
+      include: {
+        quiz: {
+          select: {
+            id: true,
+            title: true,
+            marksPerQuestion: true,
+          },
+        },
+      },
+    });
+
+    let previousAttempt = null;
+
+    const formattedAttempts = attempts.map((attempt, index) => {
+      const previousScore = previousAttempt ? previousAttempt.score : null;
+
+      const previousAccuracy = previousAttempt
+        ? Number(previousAttempt.accuracy)
+        : null;
+
+      const scoreDifference = previousAttempt
+        ? attempt.score - previousScore
+        : null;
+
+      const accuracyDifference = previousAttempt
+        ? Number((Number(attempt.accuracy) - previousAccuracy).toFixed(2))
+        : null;
+
+      const formattedAttempt = {
+        attemptId: attempt.id,
+        attemptNumber: index + 1,
+        quizId: attempt.quiz.id,
+        quizTitle: attempt.quiz.title,
+        score: attempt.score,
+        totalQuestions: attempt.totalQuestions,
+        accuracy: Number(attempt.accuracy),
+        timeTaken: attempt.timeTaken,
+        completedAt: attempt.completedAt,
+
+        previousScore,
+        scoreDifference,
+        accuracyDifference,
+      };
+
+      previousAttempt = attempt;
+
+      return formattedAttempt;
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Quiz attempt history fetched successfully",
+      data: {
+        storyId,
+        totalAttempts: formattedAttempts.length,
+        attempts: formattedAttempts,
+      },
+    });
+  } catch (error) {
+    console.error("Get quiz attempt history error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Unable to fetch quiz attempt history",
+    });
+  }
+}; // 6. Get review of a particular completed attempt
+const getQuizAttemptReview = async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+    const userId = req.user.id;
+
+    const attempt = await prisma.quizAttempt.findFirst({
+      where: {
+        id: attemptId,
+        userId,
+        status: "COMPLETED",
+      },
+      include: {
+        quiz: {
+          select: {
+            id: true,
+            title: true,
+            marksPerQuestion: true,
+          },
+        },
+        questionAttempts: {
+          orderBy: {
+            attemptedAt: "asc",
+          },
+          include: {
+            question: {
+              include: {
+                options: {
+                  orderBy: {
+                    position: "asc",
+                  },
+                },
+              },
+            },
+            option: true,
+          },
+        },
+      },
+    });
+
+    if (!attempt) {
+      return res.status(404).json({
+        status: "error",
+        message: "Quiz attempt not found",
+      });
+    }
+
+    const reviewQuestions = attempt.questionAttempts.map((questionAttempt) => {
+      const question = questionAttempt.question;
+
+      const correctOption = question.options.find((option) => option.isCorrect);
+
+      return {
+        questionId: question.id,
+        questionText: question.questionText,
+
+        options: question.options.map((option) => ({
+          id: option.id,
+          text: option.optionText,
+          isCorrect: option.isCorrect,
+          isSelected: option.id === questionAttempt.selectedOptionId,
+        })),
+
+        yourAnswer: {
+          id: questionAttempt.option.id,
+          text: questionAttempt.option.optionText,
+        },
+
+        correctAnswer: correctOption
+          ? {
+              id: correctOption.id,
+              text: correctOption.optionText,
+            }
+          : null,
+
+        isCorrect: questionAttempt.isCorrect,
+        explanation: question.explanation,
+      };
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Quiz attempt review fetched successfully",
+      data: {
+        attemptId: attempt.id,
+        quizId: attempt.quiz.id,
+        quizTitle: attempt.quiz.title,
+        score: attempt.score,
+        totalQuestions: attempt.totalQuestions,
+        accuracy: Number(attempt.accuracy),
+        timeTaken: attempt.timeTaken,
+        completedAt: attempt.completedAt,
+        questions: reviewQuestions,
+      },
+    });
+  } catch (error) {
+    console.error("Get particular quiz review error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Unable to fetch quiz attempt review",
+    });
+  }
+};
 export {
   getStudentQuiz,
   revealAnswer,
   submitQuiz,
   getQuizReview,
+  getQuizAttemptHistory,
+  getQuizAttemptReview,
 };
