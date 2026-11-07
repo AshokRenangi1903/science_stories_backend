@@ -14,21 +14,22 @@ import { CreatorRoles } from "../../utils/roles.js";
 
 const router = express.Router();
 
+// All quiz management routes require creator/admin access
+router.use(authMiddleware, allowRoles(...CreatorRoles));
+
 // Get quiz of a story
 router.get("/:quizId/getQuiz", getQuiz);
 
 // Get all quizzes
 router.get("/getQuizzes", getQuizzes);
 
-router.use(authMiddleware, allowRoles(...CreatorRoles));
-
 // Create a quiz
 router.post("/:storyId/createQuiz", createQuiz);
 
-// updating quiz
+// Update a quiz
 router.put("/:id/updateQuiz", updateQuiz);
 
-// delete quiz
+// Delete a quiz
 router.delete("/:id/deleteQuiz", deleteQuiz);
 
 export default router;

@@ -21,7 +21,7 @@ import optionRoutes from "./routes/quiz/optionRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import progressRoutes from "./routes/progressRoutes.js";
 import quizAttemptRoutes from "./routes/quizAttempt/quizAttemptRoutes.js";
-import questionAttemptRoutes from "./routes/quizAttempt/questionAttemptRoutes.js";
+// import questionAttemptRoutes from "./routes/quizAttempt/questionAttemptRoutes.js";
 import ttsRoutes from "./routes/ttsRoutes.js";
 import imageUploadRoutes from "./routes/imageUploadRoutes.js";
 
@@ -64,7 +64,7 @@ app.use("/api/questions", questionRoutes);
 app.use("/api/options", optionRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/progress", progressRoutes);
-app.use("/api/quizAttempt", quizAttemptRoutes);
+// app.use("/api/quizAttempt", quizAttemptRoutes);
 app.use("/api/questionAttempt", questionAttemptRoutes);
 
 const PORT = Number(process.env.PORT) || 5001;

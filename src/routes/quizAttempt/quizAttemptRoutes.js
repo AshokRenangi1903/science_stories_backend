@@ -1,23 +1,27 @@
-import {
-  startQuiz,
-  finishQuiz,
-  getQuizReview,
-} from "../../controllers/quizAttempt/quizAttemptControllers.js";
-
 import express from "express";
 
 import { authMiddleware } from "../../middleware/authMiddleware.js";
+
+import {
+  getStudentQuiz,
+  revealAnswer,
+  submitQuiz,
+  getQuizReview,
+} from "../../controllers/quizAttempt/quizAttemptControllers.js";
+
 const router = express.Router();
 
-router.use(authMiddleware);
+router.use(authMiddleware, allowRoles(...StudentRoles));
+// Fetch student quiz using story ID
+router.get("/:storyId/studentQuiz", getStudentQuiz);
 
-// Create Start Quiz
-router.post("/:quizId/startQuiz", startQuiz);
+// Reveal answer without saving an attempt
+router.post("/:quizId/revealAnswer", revealAnswer);
 
-// Finish Quiz
-router.post("/:attemptId/finishQuiz", finishQuiz);
+// Submit the complete quiz
+router.post("/:quizId/submitQuiz", submitQuiz);
 
-// Review Quiz
+// Fetch latest completed attempt
 router.get("/:storyId/reviewQuiz", getQuizReview);
 
 export default router;
