@@ -2,7 +2,7 @@ import express from "express";
 
 import { authMiddleware } from "../../middleware/authMiddleware.js";
 
-import allowRoles from "./../../middleware/allowedRoles";
+import allowRoles from "./../../middleware/allowedRoles.js";
 import {
   getStudentQuiz,
   revealAnswer,
