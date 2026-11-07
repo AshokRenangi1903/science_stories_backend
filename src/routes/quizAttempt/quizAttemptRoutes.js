@@ -12,7 +12,7 @@ import {
 
 const router = express.Router();
 
-router.use(authMiddleware, allowRoles(...StudentRoles));
+router.use(authMiddleware);
 // Fetch student quiz using story ID
 router.get("/:storyId/studentQuiz", getStudentQuiz);
 
