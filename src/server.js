@@ -64,8 +64,8 @@ app.use("/api/questions", questionRoutes);
 app.use("/api/options", optionRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/progress", progressRoutes);
-// app.use("/api/quizAttempt", quizAttemptRoutes);
-app.use("/api/questionAttempt", questionAttemptRoutes);
+app.use("/api/quizAttempt", quizAttemptRoutes);
+// app.use("/api/questionAttempt", questionAttemptRoutes);
 
 const PORT = Number(process.env.PORT) || 5001;
 
