@@ -24,9 +24,9 @@ const getAllScientists = async (req, res) => {
     const scientistBlocks = await prisma.storyBlock.findMany({
       where: {
         type: "SCIENTIST_CARD",
-        // story: {
-        //   isPublished: true,
-        // },
+        story: {
+          isPublished: true,
+        },
       },
       select: {
         content: true,
