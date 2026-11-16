@@ -100,6 +100,21 @@ const getMyProgress = async (req, res) => {
       orderBy: [{ era: { position: "asc" } }, { position: "asc" }],
     });
 
+    // Fetch ALL published eras, including eras with zero published stories.
+    const eras = await prisma.era.findMany({
+      where: {
+        isPublished: true,
+      },
+      select: {
+        id: true,
+        title: true,
+        imageUrl: true,
+      },
+      orderBy: {
+        position: "asc",
+      },
+    });
+
     const storyIds = stories.map((story) => story.id);
 
     // Fetch this student's progress for published stories.
@@ -197,20 +212,26 @@ const getMyProgress = async (req, res) => {
       totalBlocks > 0 ? Math.round((totalBlocksRead / totalBlocks) * 100) : 0;
 
     // Group stories by era.
-    const eraMap = new Map();
-
-    for (const story of storyProgressData) {
-      if (!eraMap.has(story.eraId)) {
-        eraMap.set(story.eraId, {
-          eraId: story.eraId,
-          eraTitle: story.eraTitle,
-          imageUrl: story.eraImageUrl,
+    // Initialize all published eras with zero progress.
+    const eraMap = new Map(
+      eras.map((era) => [
+        era.id,
+        {
+          eraId: era.id,
+          eraTitle: era.title,
+          imageUrl: era.imageUrl,
           totalStories: 0,
           completedStories: 0,
-        });
-      }
+        },
+      ]),
+    );
 
+    // Count published stories and completed stories in each era.
+    for (const story of storyProgressData) {
       const era = eraMap.get(story.eraId);
+
+      if (!era) continue;
+
       era.totalStories++;
 
       if (story.storyCompleted) {
@@ -225,22 +246,38 @@ const getMyProgress = async (req, res) => {
           ? Math.round((era.completedStories / era.totalStories) * 100)
           : 0,
     }));
-
     // Group stories by subject.
-    const subjectMap = new Map();
+    // All nine subjects supported by Science Stories.
+    const SUBJECTS = [
+      "PHYSICS",
+      "CHEMISTRY",
+      "BIOLOGY",
+      "MEDICINE",
+      "ASTRONOMY_SPACE",
+      "EARTH_ENVIRONMENT",
+      "MATHEMATICS",
+      "COMPUTER_SCIENCE",
+      "MATERIALS_TECHNOLOGY",
+    ];
 
-    for (const story of storyProgressData) {
-      const subject = story.subject ?? "UNCATEGORIZED";
-
-      if (!subjectMap.has(subject)) {
-        subjectMap.set(subject, {
+    // Initialize every subject with zero progress.
+    const subjectMap = new Map(
+      SUBJECTS.map((subject) => [
+        subject,
+        {
           subject,
           totalStories: 0,
           completedStories: 0,
-        });
-      }
+        },
+      ]),
+    );
 
-      const item = subjectMap.get(subject);
+    // Count published stories and completed stories by subject.
+    for (const story of storyProgressData) {
+      const item = subjectMap.get(story.subject);
+
+      if (!item) continue;
+
       item.totalStories++;
 
       if (story.storyCompleted) {
