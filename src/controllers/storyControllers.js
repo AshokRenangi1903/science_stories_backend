@@ -91,44 +91,37 @@ const getAllScientists = async (req, res) => {
   }
 };
 
-// Get only published stories for students
-const getPublishedStories = async (req, res) => {
+// Get published stories from a specific Era
+const getPublishedEraStories = async (req, res) => {
   try {
     const stories = await prisma.story.findMany({
       where: {
+        eraId: req.params.eraId,
         isPublished: true,
         era: {
           isPublished: true,
         },
+      },
+      orderBy: {
+        position: "asc",
       },
       include: {
         era: {
           select: {
             id: true,
             title: true,
-            position: true,
           },
         },
       },
-      orderBy: [
-        {
-          era: {
-            position: "asc",
-          },
-        },
-        {
-          position: "asc",
-        },
-      ],
     });
 
     return res.status(200).json({
       status: "success",
-      message: "Published stories retrieved successfully",
+      message: "Published era stories retrieved successfully",
       data: stories,
     });
   } catch (error) {
-    console.error("Get published stories error:", error);
+    console.error("Get published era stories error:", error);
 
     return res.status(500).json({
       status: "error",
@@ -541,7 +534,7 @@ export {
   updateStory,
   deleteStory,
   getAllStories,
-  getPublishedStories,
+  getPublishedEraStories,
   reorderStories,
   getAllScientists,
 };
