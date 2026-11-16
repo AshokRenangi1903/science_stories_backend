@@ -8,6 +8,7 @@ import {
   getEraStories,
   getStory,
   getAllStories,
+  getPublishedStories,
   updateStory,
   getAllScientists,
   reorderStories,
@@ -16,31 +17,34 @@ import { CreatorRoles } from "../utils/roles.js";
 
 const router = express.Router();
 
-// Get All Scientists
+// Public routes
 router.get("/getScientists", getAllScientists);
 
-// Get all stories from an Era
-router.get("/:eraId/getEraStories", getEraStories);
+// Get published stories for students
+router.get("/getPublishedStories", authMiddleware, getPublishedStories);
 
-// Get all stories
-router.get("/getAllStories", getAllStories);
+// Get stories from an era
+router.get("/:eraId/getEraStories", authMiddleware, getEraStories);
 
 // Get a single story
 router.get("/:storyId/getStory", getStory);
 
-// authMiddleware , role-based Access ---------------------------------------
+// Admin and Editor routes
 router.use(authMiddleware, allowRoles(...CreatorRoles));
+
+// Get all stories (Admin / Editor only)
+router.get("/getAllStories", getAllStories);
 
 // Create a new story
 router.post("/:eraId/createStory", createStory);
 
-// Updating a story in an Era
+// Update a story
 router.put("/:storyId/updateStory", updateStory);
 
-// delete a story
+// Delete a story
 router.delete("/:storyId/deleteStory", deleteStory);
 
-// reorder stories
+// Reorder stories
 router.patch("/:eraId/reorderStories", reorderStories);
 
 export default router;
