@@ -9,6 +9,7 @@ import {
   getStory,
   getAllStories,
   getPublishedEraStories,
+  getAllPublishedStories,
   updateStory,
   getAllScientists,
   reorderStories,
@@ -21,7 +22,13 @@ const router = express.Router();
 router.get("/getScientists", getAllScientists);
 
 // Get only published stories from a specific Era
-router.get("/:eraId/getPublishedEraStories", getPublishedEraStories);
+router.get(
+  "/:eraId/getPublishedEraStories",
+  authMiddleware,
+  getPublishedEraStories,
+);
+
+router.get("/getAllPublishedStories", authMiddleware, getAllPublishedStories);
 
 // Get stories from an era
 router.get("/:eraId/getEraStories", authMiddleware, getEraStories);
