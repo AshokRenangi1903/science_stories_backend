@@ -466,6 +466,7 @@ const getProgress = async (req, res) => {
           select: {
             id: true,
             title: true,
+            description: true,
             imageUrl: true,
           },
         },
@@ -491,6 +492,7 @@ const getProgress = async (req, res) => {
         return {
           storyId: item.story.id,
           title: item.story.title,
+          description: item.story.description,
           imageUrl: item.story.imageUrl,
           blocksRead: item.blocksRead,
           totalBlocks,
