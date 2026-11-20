@@ -1,4 +1,5 @@
-import admin from "../config/firebaseAdmin.js";
+import firebaseApp from "../config/firebaseAdmin.js";
+import { getMessaging } from "firebase-admin/messaging";
 import { prisma } from "../config/db.js";
 
 const sendNotificationToUser = async ({ userId, title, body, data = {} }) => {
@@ -12,7 +13,7 @@ const sendNotificationToUser = async ({ userId, title, body, data = {} }) => {
       return { success: false, reason: "No FCM token registered" };
     }
 
-    await admin.messaging().send({
+    await getMessaging(firebaseApp).send({
       token: user.fcmToken,
       notification: {
         title,
@@ -77,7 +78,7 @@ const sendNotificationToAllStudents = async ({ title, body, data = {} }) => {
     for (let i = 0; i < tokens.length; i += 500) {
       const batch = tokens.slice(i, i + 500);
 
-      const response = await admin.messaging().sendEachForMulticast({
+      const response = await getMessaging(firebaseApp).sendEachForMulticast({
         tokens: batch,
         notification: { title, body },
         data: Object.fromEntries(
