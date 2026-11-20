@@ -1,5 +1,24 @@
 import { prisma } from "../config/db.js";
 import { cleanupImageIfUnused } from "../helpers/imageCleanup.js";
+import { sendNotificationToAllStudents } from "../services/notificationService.js";
+const notifyStudentsAboutNewStory = async (story) => {
+  try {
+    const result = await sendNotificationToAllStudents({
+      title: "New Story Published! 🚀",
+      body: `Explore "${story.title}" in Science Stories.`,
+      data: {
+        type: "new_story",
+        storyId: story.id,
+        eraId: story.eraId,
+      },
+    });
+
+    console.log("New story notification result:", result);
+  } catch (error) {
+    // Notification failure must not affect story creation or publishing.
+    console.error("New story notification error:", error);
+  }
+};
 
 // Collect strings from nested StoryBlock JSON content.
 function collectStrings(value, result = []) {
@@ -235,6 +254,9 @@ const createStory = async (req, res) => {
         },
       },
     });
+    if (story.isPublished && era.isPublished) {
+      await notifyStudentsAboutNewStory(story);
+    }
 
     return res.status(200).json({
       status: "success",
@@ -371,6 +393,13 @@ const updateStory = async (req, res) => {
       where: {
         id: req.params.storyId,
       },
+      include: {
+        era: {
+          select: {
+            isPublished: true,
+          },
+        },
+      },
     });
 
     if (!story) {
@@ -408,6 +437,12 @@ const updateStory = async (req, res) => {
       },
       data: updateData,
     });
+    const isNewlyPublished =
+      !story.isPublished && updatedStory.isPublished && story.era?.isPublished;
+
+    if (isNewlyPublished) {
+      await notifyStudentsAboutNewStory(updatedStory);
+    }
 
     // Check the old image only if its URL changed.
     if (

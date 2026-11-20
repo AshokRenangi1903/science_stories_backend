@@ -15,4 +15,6 @@ router.post("/registerFCMToken", authMiddleware, registerFCMToken);
 // Remove the logged-in user's FCM token
 router.delete("/removeFCMToken", authMiddleware, removeFCMToken);
 
+router.post("/test", authMiddleware, sendTestNotification);
+
 export default router;
