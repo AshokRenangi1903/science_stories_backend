@@ -127,6 +127,4 @@ const sendNotificationToAllStudents = async ({ title, body, data = {} }) => {
   }
 };
 
-export { sendNotificationToAllStudents };
-
-export { sendNotificationToUser };
+export { sendNotificationToAllStudents, sendNotificationToUser };
