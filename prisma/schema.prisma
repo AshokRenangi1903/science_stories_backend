@@ -204,6 +204,7 @@ model User {
   // Push notifications
   fcmToken    String?  @unique
   fcmTokenUpdatedAt DateTime?
+  lastActiveAt DateTime?
   
   password       String?
   grade          String?
