@@ -23,6 +23,7 @@ import progressRoutes from "./routes/progressRoutes.js";
 import quizAttemptRoutes from "./routes/quizAttempt/quizAttemptRoutes.js";
 // import questionAttemptRoutes from "./routes/quizAttempt/questionAttemptRoutes.js";
 import ttsRoutes from "./routes/ttsRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import imageUploadRoutes from "./routes/imageUploadRoutes.js";
 
 config();
@@ -56,7 +57,7 @@ app.use("/api/tts", ttsRoutes);
 app.use("/api/uploads", imageUploadRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboardAnalytics", dashboardAnalyticsRoutes);
-app.use("/api/eras", eraRoutes);  
+app.use("/api/eras", eraRoutes);
 app.use("/api/stories", storyRoutes);
 app.use("/api/storyBlocks", storyBlockRoutes);
 app.use("/api/quiz", quizRoutes);
@@ -65,6 +66,7 @@ app.use("/api/options", optionRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/quizAttempt", quizAttemptRoutes);
+app.use("/api/notifications", notificationRoutes);
 // app.use("/api/questionAttempt", questionAttemptRoutes);
 
 const PORT = Number(process.env.PORT) || 5001;

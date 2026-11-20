@@ -200,6 +200,11 @@ model User {
 
   googleId String? @unique
   profileImage   String?
+
+  // Push notifications
+  fcmToken    String?  @unique
+  fcmTokenUpdatedAt DateTime?
+  
   password       String?
   grade          String?
   age            Int?

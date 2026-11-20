@@ -1029,10 +1029,13 @@ const updateProfile = async (req, res) => {
 
 const logoutUser = async (req, res) => {
   try {
+    // Invalidate the current session and remove the device's FCM token.
     await prisma.user.update({
       where: { id: req.user.id },
       data: {
         sessionVersion: { increment: 1 },
+        fcmToken: null,
+        fcmTokenUpdatedAt: null,
       },
     });
 
